@@ -61,6 +61,7 @@ executable saved-io
                        bytestring,
                        aeson >= 0.7.0.6,
                        http-conduit,
+                       optparse-applicative,
                        text,
                        time
   

@@ -3,16 +3,17 @@
 
 module Main where
 
-import qualified  Data.ByteString.Lazy    as  B
-import            Control.Monad               (mzero)
+import qualified  Data.ByteString.Lazy    as      B
+import            Control.Monad                   (mzero)
 import            Data.Aeson
-import            Data.Time                   (Day, defaultTimeLocale,
-                                               parseTimeOrError)
-import            Data.Text
-import            Network.HTTP.Conduit        (simpleHttp)
+import            Data.Time                       (Day, defaultTimeLocale,
+                                                   parseTimeOrError)
+import            Data.Text               hiding  (foldr)
+import            Network.HTTP.Conduit            (simpleHttp)
+import            Options.Applicative
 
 -- | Base URL for saved io API.
-savedIOURL :: String 
+savedIOURL :: String
 savedIOURL = "http://devapi.saved.io/v1/"
 
 data Bookmark =
@@ -34,6 +35,14 @@ instance FromJSON Bookmark where
              <*> (dateFromString <$> v .: "creation_date")
   parseJSON _ = mzero
 
+ppBookmark :: Bookmark -> Bool -> Text
+ppBookmark (Bookmark _ theUrl theTitle _ theList _) color =
+  Prelude.foldr append "\n"
+    [ "\nBookmark: ", theTitle
+    , "\nURL: ", theUrl
+    , "\nList: ", theList
+    ]
+
 -- | Convert a string to a type with a slightly more elegant error
 -- than plain read.
 convert :: Read a => String -> a
@@ -53,9 +62,53 @@ dateFromString = parseTimeOrError True defaultTimeLocale "%Y-%-m-%-d %H:%M:%S"
 savedIO :: String -> IO B.ByteString
 savedIO = simpleHttp . (++) savedIOURL
 
-main :: IO ()
-main = do
-  d <- (eitherDecode <$> savedIO "bookmarks&token=4df74d63d3f873031d838b7383e60573") :: IO (Either String [Bookmark])
+type Token = String
+type BMGroup = Maybe String
+type Query = String
+
+data Command = List BMGroup
+             | Search Query
+
+data Options = Options Token Command
+
+parseOptions :: Parser Options
+parseOptions = Options <$> parseToken <*> parseCommand
+
+parseToken :: Parser Token
+parseToken = strOption
+  $  short 't'
+  <> long "token"
+  <> metavar "TOKEN"
+  <> help "Saved.io token;fixme"
+
+parseList :: Parser Command
+parseList = List <$> optional (argument str (metavar "BMGROUP"))
+
+parseSearch :: Parser Command
+parseSearch = Search <$> argument str (metavar "SEARCH-STR")
+
+parseCommand :: Parser Command
+parseCommand = subparser
+  $  command "list"    (parseList `withInfo` "List bookmark groups")
+  <> command "search"  (parseSearch `withInfo` "Search for bookmark")
+
+withInfo :: Parser a -> String -> ParserInfo a
+withInfo opts desc = info (helper <*> opts) $ progDesc desc
+
+run :: Options -> IO ()
+run (Options token cmd) = do
+  d <- (eitherDecode <$> savedIO query) :: IO (Either String [Bookmark])
   case d of
     Left err    -> putStrLn $ "Error parsing " ++ err
-    Right marks -> print marks
+    Right marks -> putStrLn . unpack . Data.Text.concat $ (`ppBookmark` False) <$> marks
+    where
+      query    = queryStr ++ tokenStr
+      tokenStr = "&token=" ++ token
+      queryStr = case cmd of
+        List group    -> "bookmarks" ++ case group of
+                            Nothing -> ""
+                            Just g -> "/" ++ g
+        Search query  -> undefined
+
+main :: IO ()
+main = run =<< execParser (parseOptions `withInfo` "Command Line Interface to saved.io")
