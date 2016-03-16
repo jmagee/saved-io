@@ -95,6 +95,10 @@ parseCommand = subparser
 withInfo :: Parser a -> String -> ParserInfo a
 withInfo opts desc = info (helper <*> opts) $ progDesc desc
 
+appendMaybe :: String -> Maybe String -> String
+appendMaybe s (Just s2) = s ++ s2
+appendMaybe s Nothing = s
+
 run :: Options -> IO ()
 run (Options token cmd) = do
   d <- (eitherDecode <$> savedIO query) :: IO (Either String [Bookmark])
@@ -105,9 +109,7 @@ run (Options token cmd) = do
       query    = queryStr ++ tokenStr
       tokenStr = "&token=" ++ token
       queryStr = case cmd of
-        List group    -> "bookmarks" ++ case group of
-                            Nothing -> ""
-                            Just g -> "/" ++ g
+        List group    -> "bookmarks/" `appendMaybe` group
         Search query  -> undefined
 
 main :: IO ()
