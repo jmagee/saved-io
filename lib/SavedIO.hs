@@ -15,7 +15,7 @@ module SavedIO
 import            Control.Monad                   (mzero)
 import            Data.Aeson
 import qualified  Data.ByteString.Lazy    as      B
-import            Data.Text               hiding  (foldr, foldl)
+import            Data.Text               hiding  (foldr, foldl, group)
 import            Data.Time                       (Day, defaultTimeLocale,
                                                    formatTime,
                                                    parseTimeOrError)
@@ -119,24 +119,27 @@ retrieveBookmarks :: Token     -> -- ^ API Token
                      Maybe Day -> -- ^ From timestamp
                      Maybe Day -> -- ^ To timestamp
                      Maybe Int -> -- ^ Limit
-                     String -- temporary
-retrieveBookmarks token group from to limit =
-  foldl (>&&<)
-        ("bookmarks/" +?+ group)
-        [ tokenStr token
-        , fromStr from
-        , toStr to
-        , limitStr limit
-        ]
+                     IO (Either String [Bookmark])
+retrieveBookmarks token group from to limit = do
+  let stream = savedIO query
+  d <- (eitherDecode <$> stream) :: IO (Either String [Bookmark])
+  case d of
+    Left err    -> return . Left =<< handleDecodeError stream err
+    Right marks -> return $ Right marks
+  where query = foldl (>&&<)
+                      ("bookmarks/" +?+ group)
+                      [ tokenStr token
+                      , fromStr from
+                      , toStr to
+                      , limitStr limit
+                      ]
 
-  {-"bookmarks/" `appendMaybe` group-}
-  {->&&< tokenStr token-}
-  {->&&< fromStr from-}
-  {->&&< toStr to-}
-  {->&&< limitStr limit-}
-
-      {-query    = queryStr ++ tokenStr-}
-      {-tokenStr = "&token=" ++ token-}
-      {-queryStr = case cmd of-}
-        {-Listing group    -> "bookmarks/" `appendMaybe` group-}
-        {-Search query  -> undefined-}
+-- | Redecode the stream as an SavedIOError to see if there was an API error.
+-- This will either return the API error, if it can be obtained, or
+-- the generic aeson parse error.
+handleDecodeError :: IO B.ByteString -> String -> IO String
+handleDecodeError stream errors = do
+  d <- (eitherDecode <$> stream) :: IO (Either String SavedIOError)
+  case d of
+    Left  unknown   -> return $ "Unknown errors occured: " ++ errors ++ " " ++ unknown
+    Right helpful   -> return $ unpack $ ppSavedIOError helpful
