@@ -4,30 +4,55 @@
 module SavedIO
 ( Token
 , BMGroup
+, BMFormat
 , Query
 , Bookmark(..)
 , SavedIOError(..)
-, retrieveBookmarks
 , ppSavedIOError
 , ppBookmark
+, ppBMList
+, retrieveBookmarks
+, retrieveLists
+, extractShowy
 ) where
 
 import            Control.Monad                   (mzero)
 import            Data.Aeson
 import qualified  Data.ByteString.Lazy    as      B
+import qualified  Data.List               as      L
 import            Data.Text               hiding  (foldr, foldl, group)
 import            Data.Time                       (Day, defaultTimeLocale,
                                                    formatTime,
                                                    parseTimeOrError)
 import            Network.HTTP.Conduit            (simpleHttp)
 
-type Token    = String
-type BMGroup  = Maybe String
-type Query    = String
+type Token          = String
+type BMGroup        = Maybe String
+type BMFormat       = Maybe String
+type Query          = String
 
 -- | Base URL for saved io API.
 savedIOURL :: String
 savedIOURL = "http://devapi.saved.io/v1/"
+
+data ShowyField =
+  ShowyField { showId       :: Bool
+             , showUrl      :: Bool
+             , showTitle    :: Bool
+             , showList     :: Bool
+             , showListName :: Bool
+             , showCreation :: Bool
+             } deriving (Show)
+
+extractShowy :: BMFormat -> ShowyField
+extractShowy Nothing = ShowyField True True True True True True
+extractShowy (Just format) =
+  ShowyField ("id" `L.isInfixOf` format)
+             ("url" `L.isInfixOf` format)
+             ("title" `L.isInfixOf` format)
+             ("list" `L.isInfixOf` format)
+             ("listname" `L.isInfixOf` format)
+             ("creation" `L.isInfixOf` format)
 
 data Bookmark =
   Bookmark { id       :: Int
@@ -69,6 +94,18 @@ instance FromJSON SavedIOError where
 
 ppSavedIOError :: SavedIOError -> Text
 ppSavedIOError (SavedIOError _ msg) = append "Saved.io error: " msg
+
+data BMList = BMList Int Text
+              deriving (Show)
+
+instance FromJSON BMList where
+  parseJSON (Object v)  =
+    BMList <$> (convert <$> v .: "id")
+           <*> v .: "name"
+  parseJSON _ = mzero
+
+ppBMList :: BMList -> Text
+ppBMList (BMList _ n) = n `append` "\n"
 
 -- | Convert a string to a type with a slightly more elegant error
 -- than plain read.
@@ -124,7 +161,7 @@ retrieveBookmarks token group from to limit = do
   let stream = savedIO query
   d <- (eitherDecode <$> stream) :: IO (Either String [Bookmark])
   case d of
-    Left err    -> return . Left =<< handleDecodeError stream err
+    Left err    -> fmap Left (handleDecodeError stream err)
     Right marks -> return $ Right marks
   where query = foldl (>&&<)
                       ("bookmarks/" +?+ group)
@@ -133,6 +170,15 @@ retrieveBookmarks token group from to limit = do
                       , toStr to
                       , limitStr limit
                       ]
+
+retrieveLists :: Token -> IO (Either String [BMList])
+retrieveLists token = do
+  let stream = savedIO query
+  d <- (eitherDecode <$> stream) :: IO (Either String [BMList])
+  case d of
+    Left err    -> fmap Left (handleDecodeError stream err)
+    Right l     -> return $ Right l
+  where query = "lists" >&&< tokenStr token
 
 -- | Redecode the stream as an SavedIOError to see if there was an API error.
 -- This will either return the API error, if it can be obtained, or
