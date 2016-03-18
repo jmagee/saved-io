@@ -4,6 +4,7 @@
 module Main where
 
 import            CLOpts
+import            SavedIO
 
 import qualified  Data.ByteString.Lazy    as      B
 import            Control.Monad                   (mzero)
@@ -14,67 +15,67 @@ import            Data.Time                       (Day, defaultTimeLocale,
 import            Data.Text               hiding  (foldr)
 import            Network.HTTP.Conduit            (simpleHttp)
 
--- | Base URL for saved io API.
+{--- | Base URL for saved io API.-}
 savedIOURL :: String
 savedIOURL = "http://devapi.saved.io/v1/"
 
-data Bookmark =
-  Bookmark { id       :: Int
-           , url      :: Text
-           , title    :: Text
-           , list     :: Int
-           , listName :: Text
-           , creation :: Day
-           } deriving (Show)
+{-data Bookmark =-}
+  {-Bookmark { id       :: Int-}
+           {-, url      :: Text-}
+           {-, title    :: Text-}
+           {-, list     :: Int-}
+           {-, listName :: Text-}
+           {-, creation :: Day-}
+           {-} deriving (Show)-}
 
-instance FromJSON Bookmark where
-  parseJSON (Object v) =
-    Bookmark <$> (convert <$> v .: "bk_id")
-             <*> v .: "url"
-             <*> v .: "title"
-             <*> (convert <$> v .: "list")
-             <*> v .:? "list_name" .!= "none"
-             <*> (dateFromString <$> v .: "creation_date")
-  parseJSON _ = mzero
+{-instance FromJSON Bookmark where-}
+  {-parseJSON (Object v) =-}
+    {-Bookmark <$> (convert <$> v .: "bk_id")-}
+             {-<*> v .: "url"-}
+             {-<*> v .: "title"-}
+             {-<*> (convert <$> v .: "list")-}
+             {-<*> v .:? "list_name" .!= "none"-}
+             {-<*> (dateFromString <$> v .: "creation_date")-}
+  {-parseJSON _ = mzero-}
 
-ppBookmark :: Bookmark -> Bool -> Text
-ppBookmark (Bookmark _ theUrl theTitle _ theList _) color =
-  Prelude.foldr append "\n"
-    [ "\nBookmark: ", theTitle
-    , "\nURL: ", theUrl
-    , "\nList: ", theList
-    ]
+{-ppBookmark :: Bookmark -> Bool -> Text-}
+{-ppBookmark (Bookmark _ theUrl theTitle _ theList _) color =-}
+  {-Prelude.foldr append "\n"-}
+    {-[ "\nBookmark: ", theTitle-}
+    {-, "\nURL: ", theUrl-}
+    {-, "\nList: ", theList-}
+    {-]-}
 
-data SavedIOError =
-  SavedIOError { isError  :: Bool
-               , message   :: Text
-               } deriving (Show)
+{-data SavedIOError =-}
+  {-SavedIOError { isError  :: Bool-}
+               {-, message   :: Text-}
+               {-} deriving (Show)-}
 
-instance FromJSON SavedIOError where
-  parseJSON (Object v) =
-    SavedIOError <$> v .: "is_error"
-                 <*> v .: "message"
-  parseJSON _ = mzero
+{-instance FromJSON SavedIOError where-}
+  {-parseJSON (Object v) =-}
+    {-SavedIOError <$> v .: "is_error"-}
+                 {-<*> v .: "message"-}
+  {-parseJSON _ = mzero-}
 
-ppSavedIOError :: SavedIOError -> Text
-ppSavedIOError (SavedIOError _ msg) = append "Saved.io error: " msg
+{-ppSavedIOError :: SavedIOError -> Text-}
+{-ppSavedIOError (SavedIOError _ msg) = append "Saved.io error: " msg-}
 
--- | Convert a string to a type with a slightly more elegant error
--- than plain read.
-convert :: Read a => String -> a
-convert s =
-  case reads s of
-    [(x, "")]  -> x
-    _          -> error $ "Could not convert " ++ s
+{--- | Convert a string to a type with a slightly more elegant error-}
+{--- than plain read.-}
+{-convert :: Read a => String -> a-}
+{-convert s =-}
+  {-case reads s of-}
+    {-[(x, "")]  -> x-}
+    {-_          -> error $ "Could not convert " ++ s-}
 
--- | Convert a string into a Day.
--- We define this instead of using read, because has a friendlier parse.
--- For example, read :: Day, would choke on "2016-1-2", but the solution
--- below parses it as "2016-01-02".
-dateFromString :: String -> Day
-dateFromString = parseTimeOrError True defaultTimeLocale "%Y-%-m-%-d %H:%M:%S"
+{--- | Convert a string into a Day.-}
+{--- We define this instead of using read, because has a friendlier parse.-}
+{--- For example, read :: Day, would choke on "2016-1-2", but the solution-}
+{--- below parses it as "2016-01-02".-}
+{-dateFromString :: String -> Day-}
+{-dateFromString = parseTimeOrError True defaultTimeLocale "%Y-%-m-%-d %H:%M:%S"-}
 
--- | Fetch a URL from saved.io.
+{--- | Fetch a URL from saved.io.-}
 savedIO :: String -> IO B.ByteString
 savedIO = simpleHttp . (++) savedIOURL
 
@@ -139,7 +140,8 @@ run (CLOpts.Options token cmd) = do
       query    = queryStr ++ tokenStr
       tokenStr = "&token=" ++ token
       queryStr = case cmd of
-        Listing group    -> "bookmarks/" `appendMaybe` group
+        Listing group    -> retrieveBookmarks token group Nothing Nothing Nothing
+          --"bookmarks/" `appendMaybe` group
         Search query  -> undefined
 
 main :: IO ()

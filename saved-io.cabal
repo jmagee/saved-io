@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 -- The name of the package.
-name:                saved-io
+name:                SavedIO
 
 -- The package version.  See the Haskell package versioning policy (PVP) 
 -- for standards guiding when and how versions should be incremented.
@@ -13,7 +13,7 @@ name:                saved-io
 version:             0.1.0.0
 
 -- A short (one-line) description of the package.
-synopsis:            Saved-io client
+synopsis:            Saved-io library and client
 
 -- A longer description of the package.
 -- description:         
@@ -45,6 +45,18 @@ build-type:          Simple
 -- Constraint on the version of Cabal needed to build this package.
 cabal-version:       >=1.10
 
+library
+  exposed-modules:     SavedIO
+  build-depends:       aeson >= 0.7.0.6,
+                       base >=4.8 && <4.9,
+                       bytestring,
+                       http-conduit,
+                       text,
+                       time
+  default-language:    Haskell2010
+  ghc-options:         -Wall
+ -- -Werror
+  hs-source-dirs:      lib
 
 executable saved-io
   -- .hs or .lhs file containing the Main module.
@@ -62,6 +74,7 @@ executable saved-io
                        aeson >= 0.7.0.6,
                        http-conduit,
                        optparse-applicative,
+                       SavedIO,
                        text,
                        time
   
@@ -70,4 +83,6 @@ executable saved-io
   
   -- Base language which the package is written in.
   default-language:    Haskell2010
+  ghc-options:         -Wall
+ -- -Werror
   

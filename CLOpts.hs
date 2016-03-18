@@ -8,11 +8,12 @@ module CLOpts
 , execParser -- from Options.Applicative
 ) where
 
+import            SavedIO
 import            Options.Applicative
 
-type Token    = String
-type BMGroup  = Maybe String
-type Query    = String
+--type Token    = String
+--type BMGroup  = Maybe String
+--type Query    = String
 
 data Command = Listing BMGroup
              | Search Query
