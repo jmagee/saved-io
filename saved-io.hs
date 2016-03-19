@@ -20,7 +20,7 @@ run (CLOpts.Options token cmd) =
       bm <- retrieveBookmarks token group Nothing Nothing Nothing
       case bm of
         Left err -> putStrLn err
-        Right marks -> printTextList $ (`ppBookmark` False) <$> marks
+        Right marks -> printTextList $ ppBookmark (extractShowy format) False <$> marks
     Search query  -> undefined
     ShowLists     -> do
       bmlist <- retrieveLists token

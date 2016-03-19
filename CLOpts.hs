@@ -32,7 +32,7 @@ parseListing = Listing <$> optional (argument str (metavar "BMGROUP"))
                        <*> optional (strOption $ short 'f'
                                                <> long "format"
                                                <> metavar "BMFORMAT"
-                                               <> help "id,url,list,name,creation")
+                                               <> help "bid,url,listid,listname,creation,all")
 
 parseSearch :: Parser Command
 parseSearch = Search <$> argument str (metavar "SEARCH-STR")

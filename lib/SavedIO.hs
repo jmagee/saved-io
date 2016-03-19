@@ -26,6 +26,19 @@ import            Data.Time                       (Day, defaultTimeLocale,
                                                    parseTimeOrError)
 import            Network.HTTP.Conduit            (simpleHttp)
 
+-- FIXME: Move me
+-- |Functional alternative to if-then-else.
+-- See https://wiki.haskell.org/If-then-else
+if' :: Bool -> a -> a -> a
+if' True x _  = x
+if' False _ y = y
+
+-- |C-like ternary operator.
+--  Usage: cond ? exp1 $ exp2
+infixr 1 ?
+(?) :: Bool -> a -> a -> a
+(?) = if'
+
 type Token          = String
 type BMGroup        = Maybe String
 type BMFormat       = Maybe String
@@ -45,14 +58,23 @@ data ShowyField =
              } deriving (Show)
 
 extractShowy :: BMFormat -> ShowyField
-extractShowy Nothing = ShowyField True True True True True True
-extractShowy (Just format) =
-  ShowyField ("id" `L.isInfixOf` format)
-             ("url" `L.isInfixOf` format)
-             ("title" `L.isInfixOf` format)
-             ("list" `L.isInfixOf` format)
-             ("listname" `L.isInfixOf` format)
-             ("creation" `L.isInfixOf` format)
+extractShowy Nothing = ShowyField False True True False True False
+extractShowy (Just format) 
+  | "all" `L.isInfixOf` format  = ShowyField True True True True True True
+  | notAny format = extractShowy Nothing -- See Note: notAny
+  | otherwise =
+    ShowyField ("bid" `L.isInfixOf` format)
+               ("url" `L.isInfixOf` format)
+               ("title" `L.isInfixOf` format)
+               ("listid" `L.isInfixOf` format)
+               ("listname" `L.isInfixOf` format)
+               ("creation" `L.isInfixOf` format)
+    -- Note: notAny
+    -- If BMFormat contains no valid field identifiers, then silently
+    -- fall back to the default.
+    where notAny :: String -> Bool
+          notAny f = not . or $ fmap (`L.isInfixOf` f)
+                        ["bid", "url", "title", "listid", "listname", "creation"]
 
 data Bookmark =
   Bookmark { id       :: Int
@@ -73,13 +95,24 @@ instance FromJSON Bookmark where
              <*> (dateFromString <$> v .: "creation_date")
   parseJSON _ = mzero
 
-ppBookmark :: Bookmark -> Bool -> Text
-ppBookmark (Bookmark _ theUrl theTitle _ theList _) color =
-  Prelude.foldr append "\n"
-    [ "\nBookmark: ", theTitle
-    , "\nURL: ", theUrl
-    , "\nList: ", theList
-    ]
+ppBookmark :: ShowyField -> Bool -> Bookmark -> Text
+ppBookmark (ShowyField sID sURL sTitle sList sListName sCreation)
+           color
+           (Bookmark theID theURL theTitle theList theListName theCreation)
+  = Prelude.foldr append "\n" [id, title, url, blist, lname, creation]
+      where id       = sID ? append "\nID: " (pack $ show theID) $ ""
+            title    = sTitle ? append "\nBookmark: " theTitle $ ""
+            url      = sURL ? append "\nURL: " theURL $ ""
+            blist    = sList ? append "\nList ID: " (pack $ show theList) $ ""
+            lname    = sListName ? append "\nList: " theListName $ ""
+            creation = sCreation ? append "\nCreated: " (pack $ show theCreation) $ ""
+-- fix me
+{-ppBookmark (Bookmark _ theUrl theTitle _ theList _) color =-}
+  {-Prelude.foldr append "\n"-}
+    {-[ "\nBookmark: ", theTitle-}
+    {-, "\nURL: ", theUrl-}
+    {-, "\nList: ", theList-}
+    {-]-}
 
 data SavedIOError =
   SavedIOError { isError  :: Bool
