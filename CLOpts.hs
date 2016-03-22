@@ -12,7 +12,7 @@ import            SavedIO
 import            Options.Applicative
 
 data Command = Listing BMGroup BMFormat
-             | Search Query
+             | Search Query BMFormat Command
              | ShowLists
 
 data Options = Options Token Command
@@ -36,6 +36,11 @@ parseListing = Listing <$> optional (argument str (metavar "BMGROUP"))
 
 parseSearch :: Parser Command
 parseSearch = Search <$> argument str (metavar "SEARCH-STR")
+                     <*> optional (strOption $ short '/'
+                                             <> long "type"
+                                             <> metavar "SEARCH-TYPE"
+                                             <> help "bid,url,listid,listname,creation")
+                     <*> parseCommand -- FIXME: factor out common options
 
 parseShowLists :: Parser Command
 parseShowLists = pure ShowLists

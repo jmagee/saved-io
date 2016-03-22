@@ -21,7 +21,14 @@ run (CLOpts.Options token cmd) =
       case bm of
         Left err -> putStrLn err
         Right marks -> printTextList $ ppBookmark (extractShowy format) False <$> marks
-    Search query  -> undefined
+    Search query searchFormat (Listing group format) -> do
+      bm <- retrieveBookmarks token group Nothing Nothing Nothing
+      print $ extractSearchKey searchFormat query
+      case bm of
+        Left err -> putStrLn err
+        Right marks -> printTextList $ ppBookmark (extractShowy format) False <$>
+                       searchBookmarks (extractSearchKey searchFormat query) marks
+    Search{} -> putStrLn "Only the list command is available with search"
     ShowLists     -> do
       bmlist <- retrieveLists token
       case bmlist of

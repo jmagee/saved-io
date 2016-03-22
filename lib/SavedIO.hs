@@ -13,7 +13,9 @@ module SavedIO
 , ppBMList
 , retrieveBookmarks
 , retrieveLists
+, searchBookmarks
 , extractShowy
+, extractSearchKey
 ) where
 
 import            Control.Monad                   (mzero)
@@ -49,17 +51,17 @@ savedIOURL :: String
 savedIOURL = "http://devapi.saved.io/v1/"
 
 data ShowyField =
-  ShowyField { showId       :: Bool
-             , showUrl      :: Bool
-             , showTitle    :: Bool
-             , showList     :: Bool
-             , showListName :: Bool
-             , showCreation :: Bool
+  ShowyField { _showId       :: Bool
+             , _showUrl      :: Bool
+             , _showTitle    :: Bool
+             , _showList     :: Bool
+             , _showListName :: Bool
+             , _showCreation :: Bool
              } deriving (Show)
 
 extractShowy :: BMFormat -> ShowyField
 extractShowy Nothing = ShowyField False True True False True False
-extractShowy (Just format) 
+extractShowy (Just format)
   | "all" `L.isInfixOf` format  = ShowyField True True True True True True
   | notAny format               = extractShowy Nothing -- See Note: notAny
   | otherwise                   = fromList $ (`L.isInfixOf` format) <$> needles
@@ -73,12 +75,12 @@ extractShowy (Just format)
             notAny f = not . or $ fmap (`L.isInfixOf` f) needles
 
 data Bookmark =
-  Bookmark { id       :: Int
-           , url      :: Text
-           , title    :: Text
-           , list     :: Int
-           , listName :: Text
-           , creation :: Day
+  Bookmark { _id       :: Int
+           , _url      :: Text
+           , _title    :: Text
+           , _list     :: Int
+           , _listName :: Text
+           , _creation :: Day
            } deriving (Show)
 
 instance FromJSON Bookmark where
@@ -95,21 +97,14 @@ ppBookmark :: ShowyField -> Bool -> Bookmark -> Text
 ppBookmark (ShowyField sID sURL sTitle sList sListName sCreation)
            color
            (Bookmark theID theURL theTitle theList theListName theCreation)
-  = Prelude.foldr append "\n" [id, title, url, blist, lname, creation]
+  = Prelude.foldr append "\n" [ppID, ppTitle, ppUrl, ppBlist, ppLname, ppCreation]
       where
-        id       = sID       ? append "\nID: "       (pack $ show theID)       $ ""
-        title    = sTitle    ? append "\nBookmark: " theTitle                  $ ""
-        url      = sURL      ? append "\nURL: "      theURL                    $ ""
-        blist    = sList     ? append "\nList ID: "  (pack $ show theList)     $ ""
-        lname    = sListName ? append "\nList: "     theListName               $ ""
-        creation = sCreation ? append "\nCreated: "  (pack $ show theCreation) $ ""
--- fix me
-{-ppBookmark (Bookmark _ theUrl theTitle _ theList _) color =-}
-  {-Prelude.foldr append "\n"-}
-    {-[ "\nBookmark: ", theTitle-}
-    {-, "\nURL: ", theUrl-}
-    {-, "\nList: ", theList-}
-    {-]-}
+        ppID       = sID       ? append "\nID: "       (pack $ show theID)       $ ""
+        ppTitle    = sTitle    ? append "\nBookmark: " theTitle                  $ ""
+        ppUrl      = sURL      ? append "\nURL: "      theURL                    $ ""
+        ppBlist    = sList     ? append "\nList ID: "  (pack $ show theList)     $ ""
+        ppLname    = sListName ? append "\nList: "     theListName               $ ""
+        ppCreation = sCreation ? append "\nCreated: "  (pack $ show theCreation) $ ""
 
 data SavedIOError =
   SavedIOError { isError  :: Bool
@@ -136,6 +131,28 @@ instance FromJSON BMList where
 
 ppBMList :: BMList -> Text
 ppBMList (BMList _ n) = n `append` "\n"
+
+type SearchString = String
+type SearchInt    = Int
+type SearchDay    = Day
+data SearchKey    = BID SearchInt
+                  | Url SearchString
+                  | Title SearchString
+                  | ListID SearchInt
+                  | ListName SearchString
+                  | Creation SearchDay
+                  deriving (Show)
+
+extractSearchKey:: BMFormat -> Query -> SearchKey
+extractSearchKey Nothing q = Title q
+extractSearchKey (Just format) q
+  | "bid" `L.isInfixOf` format       = BID $ convert q
+  | "url" `L.isInfixOf` format       = Url q
+  | "title" `L.isInfixOf` format     = Title q
+  | "listid" `L.isInfixOf` format    = ListID $ convert q
+  | "listname" `L.isInfixOf` format  = ListName q
+  | "creation" `L.isInfixOf` format  = Creation $ convert q
+  | otherwise                        = extractSearchKey Nothing q
 
 -- | Convert a string to a type with a slightly more elegant error
 -- than plain read.
@@ -209,6 +226,19 @@ retrieveLists token = do
     Left err    -> fmap Left (handleDecodeError stream err)
     Right l     -> return $ Right l
   where query = "lists" >&&< tokenStr token
+
+searchBookmarks :: SearchKey -> [Bookmark] -> [Bookmark]
+searchBookmarks (BID x)      marks =
+  L.filter (\(Bookmark y _ _ _ _ _) -> x == y) marks
+searchBookmarks (Url x)    marks =
+  L.filter (\(Bookmark _ y _ _ _ _) -> pack x `isInfixOf` y) marks
+searchBookmarks (Title x)      marks =
+  L.filter (\(Bookmark _ _ y _ _ _) -> pack x `isInfixOf` y) marks
+searchBookmarks (ListID x)   marks =
+  L.filter (\(Bookmark _ _ _ y _ _) -> x == y) marks
+searchBookmarks (ListName x) marks =
+  L.filter (\(Bookmark _ _ _ _ y _) -> pack x `isInfixOf` y) marks
+searchBookmarks (Creation x) marks = undefined
 
 -- | Redecode the stream as an SavedIOError to see if there was an API error.
 -- This will either return the API error, if it can be obtained, or
