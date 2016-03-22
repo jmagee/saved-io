@@ -101,17 +101,20 @@ ppBookmark (ShowyField sID sURL sTitle sList sListName sCreation)
   = Prelude.foldr append "\n" [ppID, ppTitle, ppUrl, ppBlist, ppLname, ppCreation]
       where
         colorize' c t  = color ? colorize c t $ t
-        ppID       = sID       ? append "\nID: "       (pack $ show theID)       $ ""
+        ppID       = sID       ? append "\nID: "       (tshow theID)       $ ""
         ppTitle    = sTitle    ? append "\nBookmark: " (colorize' CS.Green theTitle) $ ""
         ppUrl      = sURL      ? append "\nURL: "      (colorize' CS.Blue theURL) $ ""
-        ppBlist    = sList     ? append "\nList ID: "  (pack $ show theList)     $ ""
-        ppLname    = sListName ? append "\nList: "     theListName               $ ""
-        ppCreation = sCreation ? append "\nCreated: "  (pack $ show theCreation) $ ""
+        ppBlist    = sList     ? append "\nList ID: "  (tshow theList)     $ ""
+        ppLname    = sListName ? append "\nList: "     theListName         $ ""
+        ppCreation = sCreation ? append "\nCreated: "  (tshow theCreation) $ ""
+
+tshow :: Show a => a -> Text
+tshow = pack . show
 
 colorize :: CS.Color -> Text -> Text
 colorize c t = Prelude.foldl append c' [t, c'']
   where c'  = pack $ CS.setSGRCode [CS.SetColor CS.Foreground CS.Vivid c]
-        c'' = pack $ CS.setSGRCode [CS.Reset] 
+        c'' = pack $ CS.setSGRCode [CS.Reset]
 
 data SavedIOError =
   SavedIOError { isError  :: Bool
