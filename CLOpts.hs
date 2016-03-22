@@ -4,6 +4,7 @@ module CLOpts
 ( parseOptions
 , withInfo
 , Options(..)
+, Common(..)
 , Command(..)
 , execParser -- from Options.Applicative
 ) where
@@ -11,14 +12,17 @@ module CLOpts
 import            SavedIO
 import            Options.Applicative
 
-data Command = Listing BMGroup BMFormat
-             | Search Query BMFormat Command
+data Command = Listing BMGroup
+             | Search Query BMFormat
              | ShowLists
 
-data Options = Options Token Command
+type Color  = Maybe Bool
+data Common = Common BMFormat Color
+
+data Options = Options Token Common Command
 
 parseOptions :: Parser Options
-parseOptions = Options <$> parseToken <*> parseCommand
+parseOptions = Options <$> parseToken <*> parseCommon <*> parseCommand
 
 parseToken :: Parser Token
 parseToken = strOption
@@ -27,12 +31,17 @@ parseToken = strOption
   <> metavar "TOKEN"
   <> help "Saved.io token;fixme"
 
+parseCommon :: Parser Common
+parseCommon = Common <$> optional (strOption $ short 'f'
+                                             <> long "format"
+                                             <> metavar "BMFORMAT"
+                                             <> help "bid,url,listid,listname,creation,all")
+                     <*> optional (switch $ short 'c'
+                                          <> long "color"
+                                          <> help "Use color")
+
 parseListing :: Parser Command
 parseListing = Listing <$> optional (argument str (metavar "BMGROUP"))
-                       <*> optional (strOption $ short 'f'
-                                               <> long "format"
-                                               <> metavar "BMFORMAT"
-                                               <> help "bid,url,listid,listname,creation,all")
 
 parseSearch :: Parser Command
 parseSearch = Search <$> argument str (metavar "SEARCH-STR")
@@ -40,7 +49,6 @@ parseSearch = Search <$> argument str (metavar "SEARCH-STR")
                                              <> long "type"
                                              <> metavar "SEARCH-TYPE"
                                              <> help "bid,url,listid,listname,creation")
-                     <*> parseCommand -- FIXME: factor out common options
 
 parseShowLists :: Parser Command
 parseShowLists = pure ShowLists

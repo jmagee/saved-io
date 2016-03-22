@@ -27,6 +27,7 @@ import            Data.Time                       (Day, defaultTimeLocale,
                                                    formatTime,
                                                    parseTimeOrError)
 import            Network.HTTP.Conduit            (simpleHttp)
+import qualified  System.Console.ANSI     as      CS
 
 -- FIXME: Move me
 -- |Functional alternative to if-then-else.
@@ -100,11 +101,16 @@ ppBookmark (ShowyField sID sURL sTitle sList sListName sCreation)
   = Prelude.foldr append "\n" [ppID, ppTitle, ppUrl, ppBlist, ppLname, ppCreation]
       where
         ppID       = sID       ? append "\nID: "       (pack $ show theID)       $ ""
-        ppTitle    = sTitle    ? append "\nBookmark: " theTitle                  $ ""
-        ppUrl      = sURL      ? append "\nURL: "      theURL                    $ ""
+        ppTitle    = sTitle    ? append "\nBookmark: " (colorize CS.Green theTitle) $ ""
+        ppUrl      = sURL      ? append "\nURL: "      (colorize CS.Blue theURL) $ ""
         ppBlist    = sList     ? append "\nList ID: "  (pack $ show theList)     $ ""
         ppLname    = sListName ? append "\nList: "     theListName               $ ""
         ppCreation = sCreation ? append "\nCreated: "  (pack $ show theCreation) $ ""
+
+colorize :: CS.Color -> Text -> Text
+colorize c t = Prelude.foldl append c' [t, c'']
+  where c'  = pack $ CS.setSGRCode [CS.SetColor CS.Foreground CS.Vivid c]
+        c'' = pack $ CS.setSGRCode [CS.Reset] 
 
 data SavedIOError =
   SavedIOError { isError  :: Bool

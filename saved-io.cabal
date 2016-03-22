@@ -48,6 +48,7 @@ cabal-version:       >=1.10
 library
   exposed-modules:     SavedIO
   build-depends:       aeson >= 0.7.0.6,
+                       ansi-terminal,
                        base >=4.8 && <4.9,
                        bytestring,
                        http-conduit,

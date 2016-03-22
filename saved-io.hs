@@ -12,28 +12,26 @@ printTextList :: [Text] -> IO ()
 printTextList = putStrLn . unpack . Data.Text.concat
 
 run :: CLOpts.Options -> IO ()
-run (CLOpts.Options token cmd) =
+run (CLOpts.Options token (Common format color) cmd) =
   case cmd of
-    Listing group format -> do
-      print format
-      print $ extractShowy format
-      bm <- retrieveBookmarks token group Nothing Nothing Nothing
-      case bm of
-        Left err -> putStrLn err
-        Right marks -> printTextList $ ppBookmark (extractShowy format) False <$> marks
-    Search query searchFormat (Listing group format) -> do
-      bm <- retrieveBookmarks token group Nothing Nothing Nothing
-      print $ extractSearchKey searchFormat query
-      case bm of
-        Left err -> putStrLn err
-        Right marks -> printTextList $ ppBookmark (extractShowy format) False <$>
-                       searchBookmarks (extractSearchKey searchFormat query) marks
-    Search{} -> putStrLn "Only the list command is available with search"
-    ShowLists     -> do
-      bmlist <- retrieveLists token
-      case bmlist of
-        Left err -> putStrLn err
-        Right l  -> printTextList $ ppBMList <$> l
+    Listing group             ->
+      retrieveBookmarks token group Nothing Nothing Nothing
+      >>= executeIf (\x -> printTextList $ ppMarkDef <$> x)
+
+    Search query searchFormat ->
+      retrieveBookmarks token Nothing Nothing Nothing Nothing
+      >>= executeIf (\x -> printTextList $ ppMarkDef <$>
+                           searchBookmarks (extractSearchKey searchFormat query) x)
+
+    ShowLists                 ->
+      retrieveLists token >>= executeIf (\x -> printTextList $ ppBMList <$> x)
+
+    where
+      executeIf _ (Left err) = putStrLn err
+      executeIf f (Right x)  = f x
+      maybeColor Nothing  = False
+      maybeColor (Just x) = x
+      ppMarkDef = ppBookmark (extractShowy format) (maybeColor color)
 
 main :: IO ()
 main = run =<< execParser (parseOptions `withInfo` "Command Line Interface to saved.io")
