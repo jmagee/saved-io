@@ -61,20 +61,16 @@ extractShowy :: BMFormat -> ShowyField
 extractShowy Nothing = ShowyField False True True False True False
 extractShowy (Just format) 
   | "all" `L.isInfixOf` format  = ShowyField True True True True True True
-  | notAny format = extractShowy Nothing -- See Note: notAny
-  | otherwise =
-    ShowyField ("bid" `L.isInfixOf` format)
-               ("url" `L.isInfixOf` format)
-               ("title" `L.isInfixOf` format)
-               ("listid" `L.isInfixOf` format)
-               ("listname" `L.isInfixOf` format)
-               ("creation" `L.isInfixOf` format)
-    -- Note: notAny
-    -- If BMFormat contains no valid field identifiers, then silently
-    -- fall back to the default.
-    where notAny :: String -> Bool
-          notAny f = not . or $ fmap (`L.isInfixOf` f)
-                        ["bid", "url", "title", "listid", "listname", "creation"]
+  | notAny format               = extractShowy Nothing -- See Note: notAny
+  | otherwise                   = fromList $ (`L.isInfixOf` format) <$> needles
+      where needles = ["bid", "url", "title", "listid", "listname", "creation"]
+            fromList [a, b, c, d, e, f] = ShowyField a b c d e f
+            fromList _ = undefined -- unreachable
+            -- Note: notAny
+            -- If BMFormat contains no valid field identifiers, then silently
+            -- fall back to the default.
+            notAny :: String -> Bool
+            notAny f = not . or $ fmap (`L.isInfixOf` f) needles
 
 data Bookmark =
   Bookmark { id       :: Int
@@ -100,12 +96,13 @@ ppBookmark (ShowyField sID sURL sTitle sList sListName sCreation)
            color
            (Bookmark theID theURL theTitle theList theListName theCreation)
   = Prelude.foldr append "\n" [id, title, url, blist, lname, creation]
-      where id       = sID ? append "\nID: " (pack $ show theID) $ ""
-            title    = sTitle ? append "\nBookmark: " theTitle $ ""
-            url      = sURL ? append "\nURL: " theURL $ ""
-            blist    = sList ? append "\nList ID: " (pack $ show theList) $ ""
-            lname    = sListName ? append "\nList: " theListName $ ""
-            creation = sCreation ? append "\nCreated: " (pack $ show theCreation) $ ""
+      where
+        id       = sID       ? append "\nID: "       (pack $ show theID)       $ ""
+        title    = sTitle    ? append "\nBookmark: " theTitle                  $ ""
+        url      = sURL      ? append "\nURL: "      theURL                    $ ""
+        blist    = sList     ? append "\nList ID: "  (pack $ show theList)     $ ""
+        lname    = sListName ? append "\nList: "     theListName               $ ""
+        creation = sCreation ? append "\nCreated: "  (pack $ show theCreation) $ ""
 -- fix me
 {-ppBookmark (Bookmark _ theUrl theTitle _ theList _) color =-}
   {-Prelude.foldr append "\n"-}
