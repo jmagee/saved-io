@@ -100,9 +100,10 @@ ppBookmark (ShowyField sID sURL sTitle sList sListName sCreation)
            (Bookmark theID theURL theTitle theList theListName theCreation)
   = Prelude.foldr append "\n" [ppID, ppTitle, ppUrl, ppBlist, ppLname, ppCreation]
       where
+        colorize' c t  = color ? colorize c t $ t
         ppID       = sID       ? append "\nID: "       (pack $ show theID)       $ ""
-        ppTitle    = sTitle    ? append "\nBookmark: " (colorize CS.Green theTitle) $ ""
-        ppUrl      = sURL      ? append "\nURL: "      (colorize CS.Blue theURL) $ ""
+        ppTitle    = sTitle    ? append "\nBookmark: " (colorize' CS.Green theTitle) $ ""
+        ppUrl      = sURL      ? append "\nURL: "      (colorize' CS.Blue theURL) $ ""
         ppBlist    = sList     ? append "\nList ID: "  (pack $ show theList)     $ ""
         ppLname    = sListName ? append "\nList: "     theListName               $ ""
         ppCreation = sCreation ? append "\nCreated: "  (pack $ show theCreation) $ ""
