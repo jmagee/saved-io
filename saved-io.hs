@@ -7,6 +7,7 @@ import            CLOpts
 import            SavedIO
 
 import            Data.Text               hiding  (group)
+import            System.IO                       (hSetEncoding, stdout, utf8)
 
 printTextList :: [Text] -> IO ()
 printTextList = putStrLn . unpack . Data.Text.concat
@@ -34,4 +35,6 @@ run (CLOpts.Options token (Common format color) cmd) =
       ppMarkDef = ppBookmark (extractShowy format) (maybeColor color)
 
 main :: IO ()
-main = run =<< execParser (parseOptions `withInfo` "Command Line Interface to saved.io")
+main = hSetEncoding stdout utf8 -- Hack for Windows to avoid "commitBuffer: invalid argument"
+    >> execParser (parseOptions `withInfo` "Command Line Interface to saved.io")
+   >>= run
