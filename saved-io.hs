@@ -6,11 +6,13 @@ module Main where
 import            CLOpts
 import            SavedIO
 
-import            Data.Text               hiding  (group)
+import            Data.Text                       (Text)
+import qualified  Data.Text               as      T
+import qualified  Data.Text.IO            as      T
 import            System.IO                       (hSetEncoding, stdout, utf8)
 
 printTextList :: [Text] -> IO ()
-printTextList = putStrLn . unpack . Data.Text.concat
+printTextList = T.putStrLn . T.concat
 
 run :: CLOpts.Options -> IO ()
 run (CLOpts.Options token (Common format color) cmd) =

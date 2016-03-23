@@ -105,7 +105,8 @@ searchBookmarks (ListID x) marks
 searchBookmarks (ListName x) marks
   = L.filter (\(Bookmark _ _ _ _ y _) -> pack x `isInfixOf` y) marks
 
-searchBookmarks (Creation x) marks = undefined
+searchBookmarks (Creation x) marks
+  = L.filter (\(Bookmark _ _ _ _ _ y) -> x == y) marks
 
 -- | Redecode the stream as an SavedIOError to see if there was an API error.
 -- This will either return the API error, if it can be obtained, or
