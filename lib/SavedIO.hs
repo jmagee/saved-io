@@ -99,10 +99,10 @@ searchBookmarks (Url x) marks
 searchBookmarks (Title x) marks
   = L.filter (\(Bookmark _ _ y _ _ _) -> pack x `isInfixOf` y) marks
 
-searchBookmarks (ListID x) marks =
+searchBookmarks (ListID x) marks
   = L.filter (\(Bookmark _ _ _ y _ _) -> x == y) marks
 
-searchBookmarks (ListName x) marks =
+searchBookmarks (ListName x) marks
   = L.filter (\(Bookmark _ _ _ _ y _) -> pack x `isInfixOf` y) marks
 
 searchBookmarks (Creation x) marks = undefined
