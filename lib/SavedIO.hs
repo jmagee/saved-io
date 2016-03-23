@@ -18,6 +18,8 @@ module SavedIO
 , extractSearchKey
 ) where
 
+import            Util
+
 import            Control.Monad                   (mzero)
 import            Data.Aeson
 import qualified  Data.ByteString.Lazy    as      B
@@ -28,19 +30,6 @@ import            Data.Time                       (Day, defaultTimeLocale,
                                                    parseTimeOrError)
 import            Network.HTTP.Conduit            (simpleHttp)
 import qualified  System.Console.ANSI     as      CS
-
--- FIXME: Move me
--- |Functional alternative to if-then-else.
--- See https://wiki.haskell.org/If-then-else
-if' :: Bool -> a -> a -> a
-if' True x _  = x
-if' False _ y = y
-
--- |C-like ternary operator.
---  Usage: cond ? exp1 $ exp2
-infixr 1 ?
-(?) :: Bool -> a -> a -> a
-(?) = if'
 
 type Token          = String
 type BMGroup        = Maybe String
@@ -108,6 +97,7 @@ ppBookmark (ShowyField sID sURL sTitle sList sListName sCreation)
         ppLname    = sListName ? append "\nList: "     theListName         $ ""
         ppCreation = sCreation ? append "\nCreated: "  (tshow theCreation) $ ""
 
+-- |Show for Text
 tshow :: Show a => a -> Text
 tshow = pack . show
 
