@@ -1,6 +1,6 @@
 -- | Various utilities to support SavedIO.
 
-module Util
+module SavedIO.Util
 ( if'
 , (?)
 ) where

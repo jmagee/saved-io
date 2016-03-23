@@ -46,7 +46,7 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 library
-  exposed-modules:     SavedIO
+  exposed-modules:     SavedIO, SavedIO.Types
   build-depends:       aeson >= 0.7.0.6,
                        ansi-terminal,
                        base >=4.8 && <4.9,
