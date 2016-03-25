@@ -8,9 +8,11 @@ module SavedIO.Types
 , Query
 , ShowyField(..)
 , Bookmark(..)
-, SavedIOError(..)
+, SavedIOResponse(..)
 , BMList(..)
 , SearchKey(..)
+, BMTitle
+, BMUrl
 , extractShowy
 , ppBookmark
 , ppBMList
@@ -32,6 +34,8 @@ type Token          = String
 type BMGroup        = Maybe String
 type BMFormat       = Maybe String
 type Query          = String
+type BMUrl          = String
+type BMTitle        = String
 
 data ShowyField =
   ShowyField { _showId       :: Bool
@@ -99,19 +103,19 @@ colorize c t = Prelude.foldl append c' [t, c'']
   where c'  = pack $ CS.setSGRCode [CS.SetColor CS.Foreground CS.Vivid c]
         c'' = pack $ CS.setSGRCode [CS.Reset]
 
-data SavedIOError =
-  SavedIOError { isError  :: Bool
-               , message   :: Text
-               } deriving (Show)
+data SavedIOResponse=
+  SavedIOResponse { isError  :: Bool
+                  , message  :: Text
+                  } deriving (Show)
 
-instance FromJSON SavedIOError where
+instance FromJSON SavedIOResponse where
   parseJSON (Object v) =
-    SavedIOError <$> v .: "is_error"
-                 <*> v .: "message"
+    SavedIOResponse <$> v .: "is_error"
+                    <*> v .: "message"
   parseJSON _ = mzero
 
-ppSavedIOError :: SavedIOError -> Text
-ppSavedIOError (SavedIOError _ msg) = append "Saved.io error: " msg
+ppSavedIOError :: SavedIOResponse -> Text
+ppSavedIOError (SavedIOResponse _ msg) = append "Saved.io error: " msg
 
 data BMList = BMList Int Text
               deriving (Show)

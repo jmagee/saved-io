@@ -51,6 +51,7 @@ library
                        ansi-terminal,
                        base >=4.8 && <4.9,
                        bytestring,
+                       http-client,
                        http-conduit,
                        text,
                        time
