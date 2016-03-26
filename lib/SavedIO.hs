@@ -90,7 +90,6 @@ retrieveBookmarks :: Token            -- ^ API Token
                   -> IO (Either String [Bookmark])
 retrieveBookmarks token group from to limit = do
   let stream = savedIO query
-  print query
   d <- (eitherDecode <$> stream) :: IO (Either String [Bookmark])
   case d of
     Left err    -> fmap Left (handleDecodeError stream err)
