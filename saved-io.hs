@@ -6,6 +6,7 @@ module Main where
 import            CLOpts
 import            SavedIO
 
+import            Data.Optional                   (Optional(..))
 import            Data.Text                       (Text)
 import qualified  Data.Text               as      T
 import qualified  Data.Text.IO            as      T
@@ -23,11 +24,11 @@ run :: CLOpts.Options -> IO ()
 run (CLOpts.Options token (Common format color) cmd) =
   case cmd of
     Listing group             ->
-      retrieveBookmarks token group Nothing Nothing Nothing
+      retrieveBookmarks token group Default Default Default
       >>= executeIf (\x -> printTextList $ ppMarkDef <$> x)
 
     Search query searchFormat ->
-      retrieveBookmarks token Nothing Nothing Nothing Nothing
+      retrieveBookmarks token Default Default Default Default
       >>= executeIf (\x -> printTextList $ ppMarkDef <$>
                            searchBookmarks (extractSearchKey searchFormat query) x)
 
@@ -43,6 +44,6 @@ run (CLOpts.Options token (Common format color) cmd) =
     where
       executeIf _ (Left err) = putStrLn $ "Error: " ++ err
       executeIf f (Right x)  = f x
-      maybeColor Nothing  = False
-      maybeColor (Just x) = x
+      maybeColor Default      = False
+      maybeColor (Specific x) = x
       ppMarkDef = ppBookmark (extractShowy format) (maybeColor color)

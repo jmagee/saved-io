@@ -10,16 +10,19 @@ module CLOpts
 ) where
 
 import            SavedIO
-import            Options.Applicative
+import            SavedIO.Util
 
-data Command = Listing BMGroup
-             | Search Query BMFormat
+import            Data.Optional                   (Optional(..))
+import            Options.Applicative     hiding  (optional)
+
+data Command = Listing (Optional BMGroup)
+             | Search Query (Optional BMFormat)
              | ShowLists
-             | AddMark BMTitle BMUrl BMGroup
+             | AddMark BMTitle BMUrl (Optional BMGroup)
              | DelMark BMId
 
-type Color  = Maybe Bool
-data Common = Common BMFormat Color
+type Color  = Bool
+data Common = Common (Optional BMFormat) (Optional Color)
 
 data Options = Options Token Common Command
 

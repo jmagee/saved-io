@@ -30,6 +30,7 @@ import            Data.Aeson                      (eitherDecode)
 import qualified  Data.ByteString.Lazy    as      B
 import qualified  Data.ByteString.Lazy.Char8 as   BP
 import qualified  Data.List               as      L
+import            Data.Optional                   (Optional(..))
 import            Data.Text               hiding  (foldr, foldl, group)
 import            Data.Time                       (Day, defaultTimeLocale,
                                                    formatTime)
@@ -67,26 +68,26 @@ epochTime = formatTime defaultTimeLocale "%s"
 -- optional parameters (in which case Nothing will yield an empty string.)
 -- Examples: formatParam "limit:" (Just "2")  ->  "limit:2"
 --           formatParam "limit:" Nothint     ->  ""
-formatParam :: String -> Maybe String -> String
-formatParam _ Nothing  = ""
-formatParam s (Just x) = s ++ x
+formatParam :: String -> Optional String -> String
+formatParam _ Default      = ""
+formatParam s (Specific x) = s ++ x
 
 tokenStr :: Token -> String
-tokenStr = formatParam "&token=" . Just
+tokenStr = formatParam "&token=" . Specific
 
 (>&&<) :: String -> String -> String
 left >&&< right = left ++ "&" ++ right
 
-(+?+) :: String -> Maybe String -> String
-s +?+ Nothing   = s
-s +?+ (Just s2) = s ++ s2
+(+?+) :: String -> Optional String -> String
+s +?+ Default       = s
+s +?+ (Specific s2) = s ++ s2
 
-retrieveBookmarks :: Token     -> -- ^ API Token
-                     BMGroup   -> -- ^ Bookmark Group
-                     Maybe Day -> -- ^ From timestamp
-                     Maybe Day -> -- ^ To timestamp
-                     Maybe Int -> -- ^ Limit
-                     IO (Either String [Bookmark])
+retrieveBookmarks :: Token            -- ^ API Token
+                  -> Optional BMGroup -- ^ Bookmark Group
+                  -> Optional Day     -- ^ From timestamp
+                  -> Optional Day     -- ^ To timestamp
+                  -> Optional Int     -- ^ Limit
+                  -> IO (Either String [Bookmark])
 retrieveBookmarks token group from to limit = do
   let stream = savedIO query
   d <- (eitherDecode <$> stream) :: IO (Either String [Bookmark])
@@ -100,11 +101,11 @@ retrieveBookmarks token group from to limit = do
                       , toStr to
                       , limitStr limit
                       ]
-        toStr :: Maybe Day -> String
+        toStr :: Optional Day -> String
         toStr = formatParam "to:" . (epochTime <$>)
-        fromStr :: Maybe Day -> String
+        fromStr :: Optional Day -> String
         fromStr = formatParam "from:" . (epochTime <$>)
-        limitStr :: Maybe Int -> String
+        limitStr :: Optional Int -> String
         limitStr = formatParam "limit:" . (show <$>)
 
 retrieveLists :: Token -> IO (Either String [BMList])
@@ -144,20 +145,20 @@ postAction urlSuffix qString = do
     Right (SavedIOResponse e m) -> e ? pure (Left $ unpack m)
                                      $ pure (Right True)
 
-createBookmark :: Token -> BMTitle -> BMUrl -> BMGroup -> IO (Either String Bool)
+createBookmark :: Token -> BMTitle -> BMUrl -> Optional BMGroup -> IO (Either String Bool)
 createBookmark token title url group = postAction urlSuffix query
     where urlSuffix = "create"
-          query     = foldl (>&&<) (formatParam "token=" $ Just token)
-                                   [ formatParam "title=" (Just title)
-                                   , formatParam "url=" (Just url)
+          query     = foldl (>&&<) (formatParam "token=" $ pure token)
+                                   [ formatParam "title=" $ pure title
+                                   , formatParam "url=" $ pure url
                                    , formatParam "list=" group
                                    ]
 
 deleteBookmark :: Token -> BMId -> IO (Either String Bool)
 deleteBookmark token bkid = postAction urlSuffix query
     where urlSuffix = "delete"
-          query     = formatParam "token=" (Just token)
-                 >&&< formatParam "bk_id=" (Just $ show bkid)
+          query     = formatParam "token=" (Specific token)
+                 >&&< formatParam "bk_id=" (Specific $ show bkid)
 
 -- | Redecode the stream as an SavedIOResponse to see if there was an API error.
 -- This will either return the API error, if it can be obtained, or

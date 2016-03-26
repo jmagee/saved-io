@@ -26,14 +26,15 @@ import            SavedIO.Util
 import            Control.Monad                   (mzero)
 import            Data.Aeson
 import qualified  Data.List               as      L
+import            Data.Optional                   (Optional(..))
 import            Data.Text               hiding  (foldr, foldl, group)
 import            Data.Time                       (Day, defaultTimeLocale,
                                                    parseTimeOrError)
 import qualified  System.Console.ANSI     as      CS
 
 type Token          = String
-type BMGroup        = Maybe String
-type BMFormat       = Maybe String
+type BMGroup        = String
+type BMFormat       = String
 type Query          = String
 type BMUrl          = String
 type BMTitle        = String
@@ -48,11 +49,11 @@ data ShowyField =
              , _showCreation :: Bool
              } deriving (Show)
 
-extractShowy :: BMFormat -> ShowyField
-extractShowy Nothing = ShowyField False True True False True False
-extractShowy (Just format)
+extractShowy :: Optional BMFormat -> ShowyField
+extractShowy Default = ShowyField False True True False True False
+extractShowy (Specific format)
   | "all" `L.isInfixOf` format  = ShowyField True True True True True True
-  | notAny format               = extractShowy Nothing -- See Note: notAny
+  | notAny format               = extractShowy Default -- See Note: notAny
   | otherwise                   = fromList $ (`L.isInfixOf` format) <$> needles
       where needles = ["bid", "url", "title", "listid", "listname", "creation"]
             fromList [a, b, c, d, e, f] = ShowyField a b c d e f
@@ -142,16 +143,16 @@ data SearchKey    = BID SearchInt
                   | Creation SearchDay
                   deriving (Show)
 
-extractSearchKey:: BMFormat -> Query -> SearchKey
-extractSearchKey Nothing q = Title q
-extractSearchKey (Just format) q
+extractSearchKey:: Optional BMFormat -> Query -> SearchKey
+extractSearchKey Default q = Title q
+extractSearchKey (Specific format) q
   | "bid" `L.isInfixOf` format       = BID $ convert q
   | "url" `L.isInfixOf` format       = Url q
   | "title" `L.isInfixOf` format     = Title q
   | "listid" `L.isInfixOf` format    = ListID $ convert q
   | "listname" `L.isInfixOf` format  = ListName q
   | "creation" `L.isInfixOf` format  = Creation $ convert q
-  | otherwise                        = extractSearchKey Nothing q
+  | otherwise                        = extractSearchKey Default q
 
 -- | Convert a string to a type with a slightly more elegant error
 -- than plain read.

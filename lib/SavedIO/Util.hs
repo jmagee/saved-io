@@ -3,7 +3,11 @@
 module SavedIO.Util
 ( if'
 , (?)
+, optional
 ) where
+
+import            Control.Applicative             (Alternative, (<|>))
+import            Data.Optional                   (Optional(..))
 
 -- |Functional alternative to if-then-else.
 -- See https://wiki.haskell.org/If-then-else
@@ -16,3 +20,6 @@ if' False _ y = y
 infixr 1 ?
 (?) :: Bool -> a -> a -> a
 (?) = if'
+
+optional :: Alternative f => f a -> f (Optional a)
+optional v = Specific <$> v <|> pure Default

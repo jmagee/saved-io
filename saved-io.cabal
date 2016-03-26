@@ -46,11 +46,12 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 library
-  exposed-modules:     SavedIO, SavedIO.Types
+  exposed-modules:     SavedIO, SavedIO.Types, SavedIO.Util
   build-depends:       aeson >= 0.7.0.6,
                        ansi-terminal,
                        base >=4.8 && <4.9,
                        bytestring,
+                       optional-args,
                        http-client,
                        http-conduit,
                        text,
@@ -75,6 +76,7 @@ executable saved-io
                        bytestring,
                        aeson >= 0.7.0.6,
                        http-conduit,
+                       optional-args,
                        optparse-applicative,
                        SavedIO,
                        text,
