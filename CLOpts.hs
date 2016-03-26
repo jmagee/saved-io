@@ -10,13 +10,13 @@ module CLOpts
 ) where
 
 import            SavedIO
-import            SavedIO.Types
 import            Options.Applicative
 
 data Command = Listing BMGroup
              | Search Query BMFormat
              | ShowLists
              | AddMark BMTitle BMUrl BMGroup
+             | DelMark BMId
 
 type Color  = Maybe Bool
 data Common = Common BMFormat Color
@@ -66,12 +66,16 @@ parseAddMark = AddMark <$> strOption ( long "title"
                                               <> metavar "BMGROUP"
                                               <> help "Bookmark group")
 
+parseDelMark :: Parser Command
+parseDelMark = DelMark <$> argument auto (metavar "BMID" <> help "Bookmark ID")
+
 parseCommand :: Parser Command
 parseCommand = subparser
-  $  command "list"       (parseListing `withInfo` "List bookmark groups")
-  <> command "search"     (parseSearch `withInfo` "Search for bookmark")
-  <> command "showlists"  (parseShowLists `withInfo` "Show groups")
-  <> command "addmark"    (parseAddMark `withInfo` "Add bookmark")
+  $ command "list"       (parseListing `withInfo` "List bookmark groups")
+ <> command "search"     (parseSearch `withInfo` "Search for bookmark")
+ <> command "showlists"  (parseShowLists `withInfo` "Show groups")
+ <> command "addmark"    (parseAddMark `withInfo` "Add bookmark")
+ <> command "delmark"    (parseDelMark `withInfo` "Delete bookmark")
 
 withInfo :: Parser a -> String -> ParserInfo a
 withInfo opts desc = info (helper <*> opts) $ progDesc desc

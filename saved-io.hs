@@ -37,6 +37,9 @@ run (CLOpts.Options token (Common format color) cmd) =
     AddMark title url group   ->
       createBookmark token title url group >>= executeIf (\_ -> putStrLn "Success!")
 
+    DelMark bkid              ->
+      deleteBookmark token bkid >>= executeIf (\_ -> pure ())
+
     where
       executeIf _ (Left err) = putStrLn $ "Error: " ++ err
       executeIf f (Right x)  = f x

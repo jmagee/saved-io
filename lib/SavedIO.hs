@@ -5,6 +5,9 @@ module SavedIO
 ( Token
 , BMGroup
 , BMFormat
+, BMId
+, BMTitle
+, BMUrl
 , Query
 , Bookmark(..)
 , SavedIOResponse(..)
@@ -15,6 +18,7 @@ module SavedIO
 , retrieveLists
 , searchBookmarks
 , createBookmark
+, deleteBookmark
 , extractShowy
 , extractSearchKey
 ) where
@@ -56,9 +60,6 @@ savedIOPOST url body = do
   result <- httpLbs req manager
   pure $ responseBody result
 
-tokenStr :: Token -> String
-tokenStr = (++) "&token="
-
 epochTime :: Day -> String
 epochTime = formatTime defaultTimeLocale "%s"
 
@@ -70,14 +71,8 @@ formatParam :: String -> Maybe String -> String
 formatParam _ Nothing  = ""
 formatParam s (Just x) = s ++ x
 
-toStr :: Maybe Day -> String
-toStr = formatParam "to:" . (epochTime <$>)
-
-fromStr :: Maybe Day -> String
-fromStr = formatParam "from:" . (epochTime <$>)
-
-limitStr :: Maybe Int -> String
-limitStr = formatParam "limit:" . (show <$>)
+tokenStr :: Token -> String
+tokenStr = formatParam "&token=" . Just
 
 (>&&<) :: String -> String -> String
 left >&&< right = left ++ "&" ++ right
@@ -105,6 +100,12 @@ retrieveBookmarks token group from to limit = do
                       , toStr to
                       , limitStr limit
                       ]
+        toStr :: Maybe Day -> String
+        toStr = formatParam "to:" . (epochTime <$>)
+        fromStr :: Maybe Day -> String
+        fromStr = formatParam "from:" . (epochTime <$>)
+        limitStr :: Maybe Int -> String
+        limitStr = formatParam "limit:" . (show <$>)
 
 retrieveLists :: Token -> IO (Either String [BMList])
 retrieveLists token = do
@@ -134,20 +135,29 @@ searchBookmarks (ListName x) marks
 searchBookmarks (Creation x) marks
   = L.filter (\(Bookmark _ _ _ _ _ y) -> x == y) marks
 
-createBookmark :: Token -> BMTitle -> BMUrl -> BMGroup -> IO (Either String Bool)
-createBookmark token title url group = do
-  let stream = savedIOPOST urlSuffix query
+postAction :: String -> String -> IO (Either String Bool)
+postAction urlSuffix qString = do
+  let stream = savedIOPOST urlSuffix qString
   d <- (eitherDecode <$> stream) :: IO (Either String SavedIOResponse)
   case d of
     Left str                    -> pure $ Left str
     Right (SavedIOResponse e m) -> e ? pure (Left $ unpack m)
                                      $ pure (Right True)
+
+createBookmark :: Token -> BMTitle -> BMUrl -> BMGroup -> IO (Either String Bool)
+createBookmark token title url group = postAction urlSuffix query
     where urlSuffix = "create"
           query     = foldl (>&&<) (formatParam "token=" $ Just token)
                                    [ formatParam "title=" (Just title)
                                    , formatParam "url=" (Just url)
                                    , formatParam "list=" group
                                    ]
+
+deleteBookmark :: Token -> BMId -> IO (Either String Bool)
+deleteBookmark token bkid = postAction urlSuffix query
+    where urlSuffix = "delete"
+          query     = formatParam "token=" (Just token)
+                 >&&< formatParam "bk_id=" (Just $ show bkid)
 
 -- | Redecode the stream as an SavedIOResponse to see if there was an API error.
 -- This will either return the API error, if it can be obtained, or

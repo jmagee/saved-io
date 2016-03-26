@@ -13,6 +13,7 @@ module SavedIO.Types
 , SearchKey(..)
 , BMTitle
 , BMUrl
+, BMId
 , extractShowy
 , ppBookmark
 , ppBMList
@@ -36,6 +37,7 @@ type BMFormat       = Maybe String
 type Query          = String
 type BMUrl          = String
 type BMTitle        = String
+type BMId           = Int
 
 data ShowyField =
   ShowyField { _showId       :: Bool
@@ -62,7 +64,7 @@ extractShowy (Just format)
             notAny f = not . or $ fmap (`L.isInfixOf` f) needles
 
 data Bookmark =
-  Bookmark { _id       :: Int
+  Bookmark { _id       :: BMId
            , _url      :: Text
            , _title    :: Text
            , _list     :: Int
