@@ -13,6 +13,7 @@ import            SavedIO
 import            SavedIO.Util
 
 import            Data.Optional                   (Optional(..))
+import            Data.Time               --       (Day)
 import            Options.Applicative     hiding  (optional)
 
 data Command = Listing (Optional BMGroup)
@@ -22,7 +23,14 @@ data Command = Listing (Optional BMGroup)
              | DelMark BMId
 
 type Color  = Bool
-data Common = Common (Optional BMFormat) (Optional Color)
+type Limit = Int
+
+data Common = Common
+              (Optional BMFormat)
+              (Optional Color)
+              (Optional Day)
+              (Optional Day)
+              (Optional Limit)
 
 data Options = Options Token Common Command
 
@@ -44,6 +52,15 @@ parseCommon = Common <$> optional (strOption $ short 'f'
                      <*> optional (switch $ short 'c'
                                          <> long "color"
                                          <> help "Use color")
+                     <*> optional (option auto $ long "from"
+                                             <> metavar "START-DATE"
+                                             <> help "Specify oldest date to consider")
+                     <*> optional (option auto $ long "until"
+                                              <> metavar "END-DATE"
+                                              <> help "Specify newest date to consider")
+                     <*> optional (option auto $ long "limit"
+                                              <> metavar "N"
+                                              <> help "Limit to N results")
 
 parseListing :: Parser Command
 parseListing = Listing <$> optional (argument str (metavar "BMGROUP"))

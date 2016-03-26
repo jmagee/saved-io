@@ -21,14 +21,14 @@ printTextList :: [Text] -> IO ()
 printTextList = T.putStrLn . T.concat
 
 run :: CLOpts.Options -> IO ()
-run (CLOpts.Options token (Common format color) cmd) =
+run (CLOpts.Options token (Common format color start end limit) cmd) =
   case cmd of
     Listing group             ->
-      retrieveBookmarks token group Default Default Default
+      retrieveBookmarks token group start end limit
       >>= executeIf (\x -> printTextList $ ppMarkDef <$> x)
 
     Search query searchFormat ->
-      retrieveBookmarks token Default Default Default Default
+      retrieveBookmarks token Default start end limit 
       >>= executeIf (\x -> printTextList $ ppMarkDef <$>
                            searchBookmarks (extractSearchKey searchFormat query) x)
 

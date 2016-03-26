@@ -33,7 +33,7 @@ import qualified  Data.List               as      L
 import            Data.Optional                   (Optional(..))
 import            Data.Text               hiding  (foldr, foldl, group)
 import            Data.Time                       (Day, defaultTimeLocale,
-                                                   formatTime)
+                                                   formatTime, UTCTime(..))
 import            Network.HTTP.Conduit            (simpleHttp, newManager,
                                                    parseUrl, httpLbs, method,
                                                    requestBody, RequestBody(..),
@@ -62,7 +62,7 @@ savedIOPOST url body = do
   pure $ responseBody result
 
 epochTime :: Day -> String
-epochTime = formatTime defaultTimeLocale "%s"
+epochTime = formatTime defaultTimeLocale "%s" . flip UTCTime 0
 
 -- | Format a POST/GET parameter, allowing for
 -- optional parameters (in which case Nothing will yield an empty string.)
@@ -90,6 +90,7 @@ retrieveBookmarks :: Token            -- ^ API Token
                   -> IO (Either String [Bookmark])
 retrieveBookmarks token group from to limit = do
   let stream = savedIO query
+  print query
   d <- (eitherDecode <$> stream) :: IO (Either String [Bookmark])
   case d of
     Left err    -> fmap Left (handleDecodeError stream err)
@@ -102,11 +103,11 @@ retrieveBookmarks token group from to limit = do
                       , limitStr limit
                       ]
         toStr :: Optional Day -> String
-        toStr = formatParam "to:" . (epochTime <$>)
+        toStr = formatParam "to=" . (epochTime <$>)
         fromStr :: Optional Day -> String
-        fromStr = formatParam "from:" . (epochTime <$>)
+        fromStr = formatParam "from=" . (epochTime <$>)
         limitStr :: Optional Int -> String
-        limitStr = formatParam "limit:" . (show <$>)
+        limitStr = formatParam "limit=" . (show <$>)
 
 retrieveLists :: Token -> IO (Either String [BMList])
 retrieveLists token = do
