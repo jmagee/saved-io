@@ -15,7 +15,7 @@ import            SavedIO
 import            SavedIO.Util
 
 import            Data.Optional                   (Optional(..))
-import            Data.Time               --       (Day)
+import            Data.Time                       (Day)
 import            Options.Applicative     hiding  (optional)
 
 type Color  = Bool

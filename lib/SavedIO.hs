@@ -119,22 +119,22 @@ retrieveLists token = do
 
 searchBookmarks :: SearchKey -> [Bookmark] -> [Bookmark]
 searchBookmarks (BID x) marks
-  = L.filter (\(Bookmark y _ _ _ _ _) -> x == y) marks
+  = L.filter (\y -> x == _id y) marks
 
 searchBookmarks (Url x) marks
-  = L.filter (\(Bookmark _ y _ _ _ _) -> pack x `isInfixOf` y) marks
+  = L.filter (\y -> pack x `isInfixOf` _url y) marks
 
 searchBookmarks (Title x) marks
-  = L.filter (\(Bookmark _ _ y _ _ _) -> pack x `isInfixOf` y) marks
+  = L.filter (\y -> pack x `isInfixOf` _title y) marks
 
 searchBookmarks (ListID x) marks
-  = L.filter (\(Bookmark _ _ _ y _ _) -> x == y) marks
+  = L.filter (\y -> x == _list y) marks
 
 searchBookmarks (ListName x) marks
-  = L.filter (\(Bookmark _ _ _ _ y _) -> pack x `isInfixOf` y) marks
+  = L.filter (\y -> pack x `isInfixOf` _listName y) marks
 
 searchBookmarks (Creation x) marks
-  = L.filter (\(Bookmark _ _ _ _ _ y) -> x == y) marks
+  = L.filter (\y -> x == _creation y) marks
 
 postAction :: String -> String -> IO (Either String Bool)
 postAction urlSuffix qString = do
