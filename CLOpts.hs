@@ -20,6 +20,7 @@ import            Options.Applicative     hiding  (optional)
 
 type Color  = Bool
 type Limit  = Int
+type Sort   = Bool
 
 data Direction = Ascending
                | Descending
@@ -39,6 +40,7 @@ data Common = Common
               (Optional Day)
               (Optional Day)
               (Optional Limit)
+              (Optional Sort)
               (Optional SortMethod)
 
 data Options = Options Token Common Command
@@ -53,12 +55,11 @@ parseToken = strOption
  <> metavar "TOKEN"
  <> help "Saved.io token;fixme"
 
-parseSort :: Parser SortMethod
-parseSort = SortByTitle <$> option auto ( short 's'
-                                       <> long "sort"
-                                       <> metavar "SORT-DIRECTION"
-                                       <> help "Ascending|Descending"
-                                       )
+parseSortMethod :: Parser SortMethod
+parseSortMethod  = SortByTitle <$> option auto ( long "sort-method"
+                                              <> metavar "SORT-DIRECTION"
+                                              <> help "Ascending|Descending"
+                                               )
 
 parseCommon :: Parser Common
 parseCommon = Common <$> optional (strOption $ short 'f'
@@ -77,7 +78,10 @@ parseCommon = Common <$> optional (strOption $ short 'f'
                      <*> optional (option auto $ long "limit"
                                               <> metavar "N"
                                               <> help "Limit to N results")
-                     <*> optional parseSort
+                     <*> optional (switch $ short 's'
+                                         <> long "sort"
+                                         <> help "Sort output")
+                     <*> optional parseSortMethod
 
 parseListing :: Parser Command
 parseListing = Listing <$> optional (argument str (metavar "BMGROUP"))

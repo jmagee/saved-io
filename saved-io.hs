@@ -30,19 +30,20 @@ sortMarks (Specific method) = case method of
     Descending  -> reverse . sortMarks Default
 
 run :: CLOpts.Options -> IO ()
-run (CLOpts.Options token (Common format color start end limit sortMethod) cmd) =
+run (CLOpts.Options token (Common format color start end limit sort sortMethod) cmd) =
   case cmd of
     Listing group             ->
       retrieveBookmarks token group start end limit
-      >>= executeIf (\x -> printTextList $ ppMarkDef <$> sortMarks sortMethod x)
+      >>= executeIf (\x -> printTextList $ ppMarkDef <$> sortIf sort sortMethod x)
 
     Search query searchFormat ->
       retrieveBookmarks token Default start end limit 
       >>= executeIf (\x -> printTextList $ ppMarkDef <$>
-                           sortMarks sortMethod
-                                     (searchBookmarks (extractSearchKey searchFormat
-                                                                        query)
-                                                       x))
+                           sortIf sort
+                                  sortMethod
+                                  (searchBookmarks (extractSearchKey searchFormat
+                                                                     query)
+                                                    x))
 
     ShowLists                 ->
       retrieveLists token >>= executeIf (\x -> printTextList $ ppBMList <$> x)
@@ -59,3 +60,5 @@ run (CLOpts.Options token (Common format color start end limit sortMethod) cmd) 
       maybeColor Default      = False
       maybeColor (Specific x) = x
       ppMarkDef = ppBookmark (extractShowy format) (maybeColor color)
+      sortIf (Specific True) m x = sortMarks m x
+      sortIf _ _ x               = x
