@@ -6,6 +6,8 @@ module CLOpts
 , Options(..)
 , Common(..)
 , Command(..)
+, Direction(..)
+, SortMethod(..)
 , execParser -- from Options.Applicative
 ) where
 
@@ -16,14 +18,20 @@ import            Data.Optional                   (Optional(..))
 import            Data.Time               --       (Day)
 import            Options.Applicative     hiding  (optional)
 
+type Color  = Bool
+type Limit  = Int
+
+data Direction = Ascending
+               | Descending
+               deriving (Read, Show)
+
 data Command = Listing (Optional BMGroup)
              | Search Query (Optional BMFormat)
              | ShowLists
              | AddMark BMTitle BMUrl (Optional BMGroup)
              | DelMark BMId
 
-type Color  = Bool
-type Limit = Int
+data SortMethod = SortByTitle Direction deriving (Read, Show)
 
 data Common = Common
               (Optional BMFormat)
@@ -31,6 +39,7 @@ data Common = Common
               (Optional Day)
               (Optional Day)
               (Optional Limit)
+              (Optional SortMethod)
 
 data Options = Options Token Common Command
 
@@ -43,6 +52,13 @@ parseToken = strOption
  <> long "token"
  <> metavar "TOKEN"
  <> help "Saved.io token;fixme"
+
+parseSort :: Parser SortMethod
+parseSort = SortByTitle <$> option auto ( short 's'
+                                       <> long "sort"
+                                       <> metavar "SORT-DIRECTION"
+                                       <> help "Ascending|Descending"
+                                       )
 
 parseCommon :: Parser Common
 parseCommon = Common <$> optional (strOption $ short 'f'
@@ -61,6 +77,7 @@ parseCommon = Common <$> optional (strOption $ short 'f'
                      <*> optional (option auto $ long "limit"
                                               <> metavar "N"
                                               <> help "Limit to N results")
+                     <*> optional parseSort
 
 parseListing :: Parser Command
 parseListing = Listing <$> optional (argument str (metavar "BMGROUP"))

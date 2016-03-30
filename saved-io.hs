@@ -6,6 +6,8 @@ module Main where
 import            CLOpts
 import            SavedIO
 
+import            Data.Function                   (on)
+import            Data.List                       (sortBy)
 import            Data.Optional                   (Optional(..))
 import            Data.Text                       (Text)
 import qualified  Data.Text               as      T
@@ -20,17 +22,27 @@ main = hSetEncoding stdout utf8 -- Hack for Windows to avoid "commitBuffer: inva
 printTextList :: [Text] -> IO ()
 printTextList = T.putStrLn . T.concat
 
+sortMarks :: Optional SortMethod -> [Bookmark] -> [Bookmark]
+sortMarks Default           = sortBy (compare `on` _title)
+sortMarks (Specific method) = case method of
+  SortByTitle d -> case d of
+    Ascending   -> sortMarks Default
+    Descending  -> reverse . sortMarks Default
+
 run :: CLOpts.Options -> IO ()
-run (CLOpts.Options token (Common format color start end limit) cmd) =
+run (CLOpts.Options token (Common format color start end limit sortMethod) cmd) =
   case cmd of
     Listing group             ->
       retrieveBookmarks token group start end limit
-      >>= executeIf (\x -> printTextList $ ppMarkDef <$> x)
+      >>= executeIf (\x -> printTextList $ ppMarkDef <$> sortMarks sortMethod x)
 
     Search query searchFormat ->
       retrieveBookmarks token Default start end limit 
       >>= executeIf (\x -> printTextList $ ppMarkDef <$>
-                           searchBookmarks (extractSearchKey searchFormat query) x)
+                           sortMarks sortMethod
+                                     (searchBookmarks (extractSearchKey searchFormat
+                                                                        query)
+                                                       x))
 
     ShowLists                 ->
       retrieveLists token >>= executeIf (\x -> printTextList $ ppBMList <$> x)
