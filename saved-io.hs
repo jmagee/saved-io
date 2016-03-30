@@ -16,8 +16,8 @@ import            System.IO                       (hSetEncoding, stdout, utf8)
 
 main :: IO ()
 main = hSetEncoding stdout utf8 -- Hack for Windows to avoid "commitBuffer: invalid argument"
-    >> execParser (parseOptions `withInfo` "Command Line Interface to saved.io")
-   >>= run
+     >> execParser (parseOptions `withInfo` "Command Line Interface to saved.io")
+     >>= run
 
 printTextList :: [Text] -> IO ()
 printTextList = T.putStrLn . T.concat

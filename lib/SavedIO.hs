@@ -158,7 +158,7 @@ deleteBookmark :: Token -> BMId -> IO (Either String Bool)
 deleteBookmark token bkid = postAction urlSuffix query
     where urlSuffix = "delete"
           query     = formatParam "token=" (Specific token)
-                 >&&< formatParam "bk_id=" (Specific $ show bkid)
+                    >&&< formatParam "bk_id=" (Specific $ show bkid)
 
 -- | Redecode the stream as an SavedIOResponse to see if there was an API error.
 -- This will either return the API error, if it can be obtained, or
