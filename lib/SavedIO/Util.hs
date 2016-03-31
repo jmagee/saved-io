@@ -9,17 +9,19 @@ module SavedIO.Util
 import            Control.Applicative             (Alternative, (<|>))
 import            Data.Optional                   (Optional(..))
 
--- |Functional alternative to if-then-else.
+-- | Functional alternative to if-then-else.
 -- See https://wiki.haskell.org/If-then-else
 if' :: Bool -> a -> a -> a
 if' True x _  = x
 if' False _ y = y
 
--- |C-like ternary operator.
+-- | C-like ternary operator.
 --  Usage: cond ? exp1 $ exp2
 infixr 1 ?
 (?) :: Bool -> a -> a -> a
 (?) = if'
 
+-- | Equivalent to optional from Control.Applicative, but return Data.Optional
+-- instead of Maybe.
 optional :: Alternative f => f a -> f (Optional a)
 optional v = Specific <$> v <|> pure Default

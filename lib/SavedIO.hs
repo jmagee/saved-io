@@ -1,8 +1,19 @@
 -- | Bindings for saved.io, a cloud-based bookmark service.
+--
+-- This library provides a Haskell interface for thes API described here:
+-- http://saved.io/api.php
 {-# LANGUAGE OverloadedStrings #-}
 
-module SavedIO
-( Token
+module SavedIO (
+  -- * saved.io API
+  retrieveBookmarks
+, retrieveGroups
+, searchBookmarks
+, createBookmark
+, deleteBookmark
+
+  -- * Exported types
+, Token
 , BMGroup
 , BMFormat
 , BMId
@@ -11,14 +22,13 @@ module SavedIO
 , Query
 , Bookmark(..)
 , SavedIOResponse(..)
+
+  -- * Pretty Printing Utilities
 , ppSavedIOError
 , ppBookmark
 , ppBMList
-, retrieveBookmarks
-, retrieveLists
-, searchBookmarks
-, createBookmark
-, deleteBookmark
+
+  -- * Utilities
 , extractShowy
 , extractSearchKey
 ) where
@@ -48,6 +58,7 @@ savedIOURL = "http://devapi.saved.io/v1/"
 savedIO :: String -> IO B.ByteString
 savedIO = simpleHttp . (++) savedIOURL
 
+-- | Send a POST request to saved.io.
 savedIOPOST :: String -> String -> IO B.ByteString
 savedIOPOST url body = do
   manager <- newManager defaultManagerSettings
@@ -61,6 +72,7 @@ savedIOPOST url body = do
   result <- httpLbs req manager
   pure $ responseBody result
 
+-- | Convert a Day into epoch time.
 epochTime :: Day -> String
 epochTime = formatTime defaultTimeLocale "%s" . flip UTCTime 0
 
@@ -72,16 +84,24 @@ formatParam :: String -> Optional String -> String
 formatParam _ Default      = ""
 formatParam s (Specific x) = s ++ x
 
+-- | Format a token into a URL parameter.
 tokenStr :: Token -> String
 tokenStr = formatParam "&token=" . Specific
 
+-- | Join URL parameters with an ampersand.
 (>&&<) :: String -> String -> String
 left >&&< right = left ++ "&" ++ right
 
+-- | Append an Optional string.
+-- >>> "foo" +?+ Default
+-- "foo"
+-- >>> "foo" +?+ (Specific "bar")
+-- "foobar"
 (+?+) :: String -> Optional String -> String
 s +?+ Default       = s
 s +?+ (Specific s2) = s ++ s2
 
+-- | Retrieve a list of bookmarks.
 retrieveBookmarks :: Token            -- ^ API Token
                   -> Optional BMGroup -- ^ Bookmark Group
                   -> Optional Day     -- ^ From timestamp
@@ -108,8 +128,9 @@ retrieveBookmarks token group from to limit = do
         limitStr :: Optional Int -> String
         limitStr = formatParam "limit=" . (show <$>)
 
-retrieveLists :: Token -> IO (Either String [BMList])
-retrieveLists token = do
+-- | Retrieve the list of bookmark groups.
+retrieveGroups :: Token -> IO (Either String [BMList])
+retrieveGroups token = do
   let stream = savedIO query
   d <- (eitherDecode <$> stream) :: IO (Either String [BMList])
   case d of
@@ -117,6 +138,10 @@ retrieveLists token = do
     Right l     -> pure $ Right l
   where query = "lists" >&&< tokenStr token
 
+-- | Search bookmarks.
+-- 
+-- This call does retrieves all bookmarks then does a search.  The saved.io
+-- API does not provide a server side search call.
 searchBookmarks :: SearchKey -> [Bookmark] -> [Bookmark]
 searchBookmarks (BID x) marks
   = L.filter (\y -> x == _id y) marks
@@ -136,16 +161,12 @@ searchBookmarks (ListName x) marks
 searchBookmarks (Creation x) marks
   = L.filter (\y -> x == _creation y) marks
 
-postAction :: String -> String -> IO (Either String Bool)
-postAction urlSuffix qString = do
-  let stream = savedIOPOST urlSuffix qString
-  d <- (eitherDecode <$> stream) :: IO (Either String SavedIOResponse)
-  case d of
-    Left str                    -> pure $ Left str
-    Right (SavedIOResponse e m) -> e ? pure (Left $ unpack m)
-                                     $ pure (Right True)
-
-createBookmark :: Token -> BMTitle -> BMUrl -> Optional BMGroup -> IO (Either String Bool)
+-- | Create a bookmark entry.
+createBookmark :: Token             -- ^ API Token
+               -> BMTitle           -- ^ Bookmark title
+               -> BMUrl             -- ^ Bookmark URL
+               -> Optional BMGroup  -- ^ Optional Bookmark group
+               -> IO (Either String Bool) -- ^ Either API error message or Success flag
 createBookmark token title url group = postAction urlSuffix query
     where urlSuffix = "create"
           query     = foldl (>&&<) (formatParam "token=" $ pure token)
@@ -154,11 +175,27 @@ createBookmark token title url group = postAction urlSuffix query
                                    , formatParam "list=" group
                                    ]
 
-deleteBookmark :: Token -> BMId -> IO (Either String Bool)
+-- | Delete a bookmark.
+deleteBookmark :: Token   -- ^ API token
+               -> BMId    -- ^ Bookmark ID
+               -- | Either API error message or Success flag
+               -- Note that this call returns succes even if it
+               -- did not actually delete anything.
+               -> IO (Either String Bool)
 deleteBookmark token bkid = postAction urlSuffix query
     where urlSuffix = "delete"
           query     = formatParam "token=" (Specific token)
                     >&&< formatParam "bk_id=" (Specific $ show bkid)
+
+-- | Perform a url POST action, and check for API failure.
+postAction :: String -> String -> IO (Either String Bool)
+postAction urlSuffix qString = do
+  let stream = savedIOPOST urlSuffix qString
+  d <- (eitherDecode <$> stream) :: IO (Either String SavedIOResponse)
+  case d of
+    Left str                    -> pure $ Left str
+    Right (SavedIOResponse e m) -> e ? pure (Left $ unpack m)
+                                     $ pure (Right True)
 
 -- | Redecode the stream as an SavedIOResponse to see if there was an API error.
 -- This will either return the API error, if it can be obtained, or

@@ -1,8 +1,9 @@
 -- | Types for SavedIO.
 {-# LANGUAGE OverloadedStrings #-}
 
-module SavedIO.Types
-( Token
+module SavedIO.Types (
+  -- * Exported Types
+  Token
 , BMGroup
 , BMFormat
 , Query
@@ -14,10 +15,14 @@ module SavedIO.Types
 , BMTitle
 , BMUrl
 , BMId
+
+  -- * Pretty Printing Utilities
 , extractShowy
 , ppBookmark
 , ppBMList
 , ppSavedIOError
+
+  -- * Search Utility
 , extractSearchKey
 ) where
 
@@ -32,14 +37,37 @@ import            Data.Time                       (Day, defaultTimeLocale,
                                                    parseTimeOrError)
 import qualified  System.Console.ANSI     as      CS
 
+-- | The saved.io API Token.  It can be generated here: linkme.
 type Token          = String
+
+-- | The bookmark group.  saved.io commonly refers to this as a "list", but 
+-- that terminology is a bit overloaded.
 type BMGroup        = String
+
+-- | The bookmark format.  This is simply a string that will be matchd
+-- for the keywords:
+--
+--   * bid
+--   * url
+--   * title
+--   * listid
+--   * listname
+--   * creation
 type BMFormat       = String
+
+-- | Search query; i.e. search string.
 type Query          = String
+
+-- | Bookmark URL.
 type BMUrl          = String
+
+-- | Bookmark title.
 type BMTitle        = String
+
+-- | Bookmark ID. (saved.io's internal identiciation numbers.)
 type BMId           = Int
 
+-- | Flags to indicate which fields of a Bookmark record to print.
 data ShowyField =
   ShowyField { _showId       :: Bool
              , _showUrl      :: Bool
@@ -49,6 +77,9 @@ data ShowyField =
              , _showCreation :: Bool
              } deriving (Show)
 
+-- | Extract a ShowyField from a BMFormat string.'
+-- This matches the string for any text string matching the bookmark
+-- fields - each match indicates that the field should be shown.
 extractShowy :: Optional BMFormat -> ShowyField
 extractShowy Default = ShowyField False True True False True False
 extractShowy (Specific format)
@@ -64,6 +95,7 @@ extractShowy (Specific format)
             notAny :: String -> Bool
             notAny f = not . or $ fmap (`L.isInfixOf` f) needles
 
+-- | saved.io Bookmark.
 data Bookmark =
   Bookmark { _id       :: BMId
            , _url      :: Text
@@ -83,7 +115,11 @@ instance FromJSON Bookmark where
              <*> (dateFromString <$> v .: "creation_date")
   parseJSON _ = mzero
 
-ppBookmark :: ShowyField -> Bool -> Bookmark -> Text
+-- | Pretty print a saved.io bookmark.
+ppBookmark :: ShowyField -- ^ A ShowyField indicating which fields to display.
+           -> Bool       -- ^ Whether to use color.
+           -> Bookmark   -- ^ The bookmark to print.
+           -> Text       -- ^ The formatted result.
 ppBookmark (ShowyField sID sURL sTitle sList sListName sCreation)
            color
            (Bookmark theID theURL theTitle theList theListName theCreation)
@@ -97,15 +133,22 @@ ppBookmark (ShowyField sID sURL sTitle sList sListName sCreation)
         ppLname    = sListName ? append "\nList: "     theListName         $ ""
         ppCreation = sCreation ? append "\nCreated: "  (tshow theCreation) $ ""
 
--- |Show for Text
+-- Show for Text
 tshow :: Show a => a -> Text
 tshow = pack . show
 
+-- Colorize it!
 colorize :: CS.Color -> Text -> Text
 colorize c t = Prelude.foldl append c' [t, c'']
   where c'  = pack $ CS.setSGRCode [CS.SetColor CS.Foreground CS.Vivid c]
         c'' = pack $ CS.setSGRCode [CS.Reset]
 
+-- | A response object from saved.io.  This is returned on error
+-- and as a response to POST requests.  The response may have an optional
+-- data payload as well, but we ignore it.
+-- 
+-- The ignored data payload is usually either empty or contains a copy
+-- of the content just POSTed.
 data SavedIOResponse=
   SavedIOResponse { isError  :: Bool
                   , message  :: Text
@@ -117,9 +160,12 @@ instance FromJSON SavedIOResponse where
                     <*> v .: "message"
   parseJSON _ = mzero
 
+-- | Pretty print a SavedIOResponse.
 ppSavedIOError :: SavedIOResponse -> Text
 ppSavedIOError (SavedIOResponse _ msg) = append "Saved.io error: " msg
 
+-- | A "group" of bookmarks.
+-- FIXME: Rename to something with Group.
 data BMList = BMList Int Text
               deriving (Show)
 
@@ -129,20 +175,25 @@ instance FromJSON BMList where
            <*> v .: "name"
   parseJSON _ = mzero
 
+-- | Pretty print a bookmark group
+-- FIXME: Rename.
 ppBMList :: BMList -> Text
 ppBMList (BMList _ n) = n `append` "\n"
 
 type SearchString = String
 type SearchInt    = Int
 type SearchDay    = Day
-data SearchKey    = BID SearchInt
-                  | Url SearchString
-                  | Title SearchString
-                  | ListID SearchInt
-                  | ListName SearchString
-                  | Creation SearchDay
+
+-- | SearchKey encodes "what to search for" and "where to search for it."
+data SearchKey    = BID SearchInt         -- ^ Search by ID.
+                  | Url SearchString      -- ^ Search by URL.
+                  | Title SearchString    -- ^ Search by Title.
+                  | ListID SearchInt      -- ^ Search by Group ID.
+                  | ListName SearchString -- ^ Search by Group Name.
+                  | Creation SearchDay    -- ^ Search by Creation date.
                   deriving (Show)
 
+-- | Extract a SearchKey from a BMFormat string.
 extractSearchKey:: Optional BMFormat -> Query -> SearchKey
 extractSearchKey Default q = Title q
 extractSearchKey (Specific format) q

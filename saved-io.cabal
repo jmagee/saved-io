@@ -56,6 +56,7 @@ library
                        http-conduit,
                        text,
                        time
+  other-extensions:    OverloadedStrings
   default-language:    Haskell2010
   ghc-options:         -Wall
  -- -Werror
@@ -69,7 +70,7 @@ executable saved-io
   other-modules:       CLOpts
   
   -- LANGUAGE extensions used by modules in this package.
-  -- other-extensions:    
+  other-extensions:    OverloadedStrings
   
   -- Other library packages from which modules are imported.
   build-depends:       base >=4.8 && <4.9,

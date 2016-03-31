@@ -19,9 +19,13 @@ main = hSetEncoding stdout utf8 -- Hack for Windows to avoid "commitBuffer: inva
      >> execParser (parseOptions `withInfo` "Command Line Interface to saved.io")
      >>= run
 
+-- | Print a list of Text.
 printTextList :: [Text] -> IO ()
 printTextList = T.putStrLn . T.concat
 
+-- | Sort bookmarks.
+-- If no SortMethod is provided then default to an ascending sort by
+-- title.
 sortMarks :: Optional SortMethod -> [Bookmark] -> [Bookmark]
 sortMarks Default           = sortBy (compare `on` _title)
 sortMarks (Specific method) = case method of
@@ -37,7 +41,7 @@ run (CLOpts.Options token (Common format color start end limit sort sortMethod) 
       >>= executeIf (\x -> printTextList $ ppMarkDef <$> sortIf sort sortMethod x)
 
     Search query searchFormat ->
-      retrieveBookmarks token Default start end limit 
+      retrieveBookmarks token Default start end limit
       >>= executeIf (\x -> printTextList $ ppMarkDef <$>
                            sortIf sort
                                   sortMethod
@@ -46,7 +50,7 @@ run (CLOpts.Options token (Common format color start end limit sort sortMethod) 
                                                     x))
 
     ShowLists                 ->
-      retrieveLists token >>= executeIf (\x -> printTextList $ ppBMList <$> x)
+      retrieveGroups token >>= executeIf (\x -> printTextList $ ppBMList <$> x)
 
     AddMark title url group   ->
       createBookmark token title url group >>= executeIf (\_ -> putStrLn "Success!")
