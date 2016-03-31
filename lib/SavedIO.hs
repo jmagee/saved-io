@@ -10,6 +10,7 @@
 -- >>> import Data.Time (Day, fromGregorian)
 -- >>> let token = "your-api-token"
 -- >>> let (<$$>) = fmap . fmap
+-- >>> let (<$$$>) = fmap . fmap . fmap
 -- 
 -- == Retrieve all bookmarks for an account
 -- >>> retrieveBookmarks token Default Default Default Default
@@ -45,6 +46,9 @@
 -- == Delete a bookmark
 -- >>> deleteBookmark token 90210
 --
+-- == Pretty print (format) a list of bookmarks
+-- >>> ppBookmark (ShowyField True True True True True True) False <$$$>
+--     retrieveBookmarks token Default Default Default Default
 {-# LANGUAGE OverloadedStrings #-}
 
 module SavedIO (
