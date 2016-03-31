@@ -2,6 +2,49 @@
 --
 -- This library provides a Haskell interface for thes API described here:
 -- http://saved.io/api.php
+--
+-- = Usage Example
+-- == Imports/setup used in the examples
+-- >>> import SavedIO
+-- >>> import Data.Optional (Optional(..))
+-- >>> import Data.Time (Day, fromGregorian)
+-- >>> let token = "your-api-token"
+-- >>> let (<$$>) = fmap . fmap
+-- 
+-- == Retrieve all bookmarks for an account
+-- >>> retrieveBookmarks token Default Default Default Default
+--
+-- == Retrieve bookmarks in group Haskell
+-- >>> retrieveBookmarks token Haskell Default Default Default
+--
+-- == Retrieve bookmarks in group Haskell, created between a date range, limit to 10 results.
+-- >>> retrieveBookmarks token
+--                       (Specific "Haskell")
+--                       (Specific (fromGregorian 2016 01 01))
+--                       (Specific (fromGregorian (2016 03 01))
+--                       (Specific 10)
+--
+-- == Search for bookmark by title
+-- >>> searchBookmarks (Title "Hask") <$$> retrieveBookmarks token Default Default Default Default
+--
+-- == Search for bookmark by URL
+-- >>> searchBookmarks (Url "haskell.org") <$$> retrieveBookmarks token Default Default Default Default
+--
+-- == Search for bookmark by ID
+-- >>> searchBookmarks (BID 901210) <$$> retrieveBookmarks token Default Default Default Default
+--
+-- == Retrive groups
+-- >>> retrieveGroups token
+--
+-- == Add a bookmark
+-- >>> createBookmark token "My Page" "http://www.me.me" Default
+--
+-- == Add a bookmark within a named group
+-- >>> createBookmark token "My Page" "http://www.me.me" (Specific "stuff")
+--
+-- == Delete a bookmark
+-- >>> deleteBookmark token 90210
+--
 {-# LANGUAGE OverloadedStrings #-}
 
 module SavedIO (

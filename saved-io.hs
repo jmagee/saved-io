@@ -49,7 +49,7 @@ run (CLOpts.Options token (Common format color start end limit sort sortMethod) 
                                                                      query)
                                                     x))
 
-    ShowLists                 ->
+    ShowGroups                ->
       retrieveGroups token >>= executeIf (\x -> printTextList $ ppBMList <$> x)
 
     AddMark title url group   ->

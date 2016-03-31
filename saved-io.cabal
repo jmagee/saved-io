@@ -59,7 +59,6 @@ library
   other-extensions:    OverloadedStrings
   default-language:    Haskell2010
   ghc-options:         -Wall
- -- -Werror
   hs-source-dirs:      lib
 
 executable saved-io
@@ -89,5 +88,3 @@ executable saved-io
   -- Base language which the package is written in.
   default-language:    Haskell2010
   ghc-options:         -Wall
- -- -Werror
-  

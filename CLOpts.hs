@@ -35,7 +35,7 @@ data Direction = Ascending
 -- | Sub-command line argument.
 data Command = Listing (Optional BMGroup)
              | Search Query (Optional BMFormat)
-             | ShowLists
+             | ShowGroups
              | AddMark BMTitle BMUrl (Optional BMGroup)
              | DelMark BMId
 
@@ -122,7 +122,7 @@ parseSearch = Search
 
 -- | Parse the show groups command.
 parseShowGroups :: Parser Command
-parseShowGroups = pure ShowLists
+parseShowGroups = pure ShowGroups
 
 -- |  Parse the add bookmark command.
 parseAddMark :: Parser Command
