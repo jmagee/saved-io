@@ -120,9 +120,9 @@ parseSearch = Search
                           <> metavar "SEARCH-TYPE"
                           <> help "bid,url,listid,listname,creation")
 
--- | Parse the FIXME command.
-parseShowLists :: Parser Command
-parseShowLists = pure ShowLists
+-- | Parse the show groups command.
+parseShowGroups :: Parser Command
+parseShowGroups = pure ShowLists
 
 -- |  Parse the add bookmark command.
 parseAddMark :: Parser Command
@@ -146,7 +146,7 @@ parseCommand :: Parser Command
 parseCommand = subparser
   $  command "list"       (parseListing `withInfo` "List bookmark groups")
   <> command "search"     (parseSearch `withInfo` "Search for bookmark")
-  <> command "showlists"  (parseShowLists `withInfo` "Show groups")
+  <> command "groups"     (parseShowGroups `withInfo` "Show groups")
   <> command "addmark"    (parseAddMark `withInfo` "Add bookmark")
   <> command "delmark"    (parseDelMark `withInfo` "Delete bookmark")
 

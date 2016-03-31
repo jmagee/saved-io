@@ -10,7 +10,7 @@ module SavedIO.Types (
 , ShowyField(..)
 , Bookmark(..)
 , SavedIOResponse(..)
-, BMList(..)
+, Group(..)
 , SearchKey(..)
 , BMTitle
 , BMUrl
@@ -165,20 +165,18 @@ ppSavedIOError :: SavedIOResponse -> Text
 ppSavedIOError (SavedIOResponse _ msg) = append "Saved.io error: " msg
 
 -- | A "group" of bookmarks.
--- FIXME: Rename to something with Group.
-data BMList = BMList Int Text
+data Group = Group Int Text
               deriving (Show)
 
-instance FromJSON BMList where
+instance FromJSON Group where
   parseJSON (Object v)  =
-    BMList <$> (convert <$> v .: "id")
-           <*> v .: "name"
+    Group <$> (convert <$> v .: "id")
+            <*> v .: "name"
   parseJSON _ = mzero
 
 -- | Pretty print a bookmark group
--- FIXME: Rename.
-ppBMList :: BMList -> Text
-ppBMList (BMList _ n) = n `append` "\n"
+ppBMList :: Group -> Text
+ppBMList (Group _ n) = n `append` "\n"
 
 type SearchString = String
 type SearchInt    = Int

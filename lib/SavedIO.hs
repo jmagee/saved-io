@@ -129,10 +129,10 @@ retrieveBookmarks token group from to limit = do
         limitStr = formatParam "limit=" . (show <$>)
 
 -- | Retrieve the list of bookmark groups.
-retrieveGroups :: Token -> IO (Either String [BMList])
+retrieveGroups :: Token -> IO (Either String [Group])
 retrieveGroups token = do
   let stream = savedIO query
-  d <- (eitherDecode <$> stream) :: IO (Either String [BMList])
+  d <- (eitherDecode <$> stream) :: IO (Either String [Group])
   case d of
     Left err    -> fmap Left (handleDecodeError stream err)
     Right l     -> pure $ Right l
