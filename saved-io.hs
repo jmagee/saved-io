@@ -3,7 +3,7 @@
 
 module Main where
 
-import            CLOpts
+import            CLOpts                  as      CL
 import            SavedIO
 
 import            Data.Function                   (on)
@@ -33,8 +33,8 @@ sortMarks (Specific method) = case method of
     Ascending   -> sortMarks Default
     Descending  -> reverse . sortMarks Default
 
-run :: CLOpts.Options -> IO ()
-run (CLOpts.Options token (Common format color start end limit sort sortMethod) cmd) =
+run :: CL.Options -> IO ()
+run (CL.Options token (Common format color start end limit sort sortMethod) cmd) =
   case cmd of
     Listing group             ->
       retrieveBookmarks token group start end limit
