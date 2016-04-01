@@ -86,7 +86,7 @@ executable saved-io
                        time
   
   -- Directories containing source files.
-  -- hs-source-dirs:      
+  hs-source-dirs:      tool
   
   -- Base language which the package is written in.
   default-language:    Haskell2010
