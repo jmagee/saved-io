@@ -75,7 +75,7 @@ data ShowyField =
              , _showList     :: Bool
              , _showListName :: Bool
              , _showCreation :: Bool
-             } deriving (Show)
+             } deriving (Eq, Show)
 
 -- | Extract a ShowyField from a BMFormat string.'
 -- This matches the string for any text string matching the bookmark

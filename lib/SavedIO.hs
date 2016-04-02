@@ -11,7 +11,7 @@
 -- >>> let token = "your-api-token"
 -- >>> let (<$$>) = fmap . fmap
 -- >>> let (<$$$>) = fmap . fmap . fmap
--- 
+--
 -- == Retrieve all bookmarks for an account
 -- >>> retrieveBookmarks token Default Default Default Default
 --
@@ -186,7 +186,7 @@ retrieveGroups token = do
   where query = "lists" >&&< tokenStr token
 
 -- | Search bookmarks.
--- 
+--
 -- This call does retrieves all bookmarks then does a search.  The saved.io
 -- API does not provide a server side search call.
 searchBookmarks :: SearchKey -> [Bookmark] -> [Bookmark]
