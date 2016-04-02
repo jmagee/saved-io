@@ -19,7 +19,7 @@ module SavedIO.Types (
   -- * Pretty Printing Utilities
 , extractShowy
 , ppBookmark
-, ppBMList
+, ppBMGroup
 , ppSavedIOError
 
   -- * Search Utility
@@ -86,7 +86,7 @@ extractShowy (Specific format)
   | "all" `L.isInfixOf` format  = ShowyField True True True True True True
   | notAny format               = extractShowy Default -- See Note: notAny
   | otherwise                   = fromList $ (`L.isInfixOf` format) <$> needles
-      where needles = ["bid", "url", "title", "listid", "listname", "creation"]
+      where needles = ["bid", "url", "title", "groupid", "groupname", "creation"]
             fromList [a, b, c, d, e, f] = ShowyField a b c d e f
             fromList _ = undefined -- unreachable
             -- Note: notAny
@@ -175,20 +175,20 @@ instance FromJSON Group where
   parseJSON _ = mzero
 
 -- | Pretty print a bookmark group
-ppBMList :: Group -> Text
-ppBMList (Group _ n) = n `append` "\n"
+ppBMGroup :: Group -> Text
+ppBMGroup (Group _ n) = n `append` "\n"
 
 type SearchString = String
 type SearchInt    = Int
 type SearchDay    = Day
 
 -- | SearchKey encodes "what to search for" and "where to search for it."
-data SearchKey    = BID SearchInt         -- ^ Search by ID.
-                  | Url SearchString      -- ^ Search by URL.
-                  | Title SearchString    -- ^ Search by Title.
-                  | ListID SearchInt      -- ^ Search by Group ID.
-                  | ListName SearchString -- ^ Search by Group Name.
-                  | Creation SearchDay    -- ^ Search by Creation date.
+data SearchKey    = BID SearchInt          -- ^ Search by ID.
+                  | Url SearchString       -- ^ Search by URL.
+                  | Title SearchString     -- ^ Search by Title.
+                  | GroupID SearchInt      -- ^ Search by Group ID.
+                  | GroupName SearchString -- ^ Search by Group Name.
+                  | Creation SearchDay     -- ^ Search by Creation date.
                   deriving (Show)
 
 -- | Extract a SearchKey from a BMFormat string.
@@ -198,8 +198,8 @@ extractSearchKey (Specific format) q
   | "bid" `L.isInfixOf` format       = BID $ convert q
   | "url" `L.isInfixOf` format       = Url q
   | "title" `L.isInfixOf` format     = Title q
-  | "listid" `L.isInfixOf` format    = ListID $ convert q
-  | "listname" `L.isInfixOf` format  = ListName q
+  | "listid" `L.isInfixOf` format    = GroupID $ convert q
+  | "listname" `L.isInfixOf` format  = GroupName q
   | "creation" `L.isInfixOf` format  = Creation $ convert q
   | otherwise                        = extractSearchKey Default q
 

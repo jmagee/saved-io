@@ -1,4 +1,5 @@
 -- | Command line option  handling
+{-# LANGUAGE OverloadedStrings #-}
 
 module CLOpts
 ( parseOptions
@@ -14,6 +15,8 @@ module CLOpts
 import            SavedIO
 import            SavedIO.Util
 
+import            Control.Monad                   (mzero)
+import            Data.Aeson
 import            Data.Optional                   (Optional(..))
 import            Data.Time                       (Day)
 import            Options.Applicative     hiding  (optional)
@@ -38,6 +41,7 @@ data Command = Listing (Optional BMGroup)
              | ShowGroups
              | AddMark BMTitle BMUrl (Optional BMGroup)
              | DelMark BMId
+             deriving (Show)
 
 -- | Sorting method.
 -- Currently only sorting by title is supported.
@@ -46,6 +50,7 @@ data SortMethod = SortByTitle Direction deriving (Read, Show)
 -- | Common options.  These are options that apply to at least two
 -- different Commands.
 data Common = Common
+              (Optional Token)
               (Optional BMFormat)
               (Optional Color)
               (Optional Day)
@@ -53,17 +58,59 @@ data Common = Common
               (Optional Limit)
               (Optional Sort)
               (Optional SortMethod)
+              deriving (Show)
+
+instance FromJSON Common where
+  parseJSON (Object v) =
+    Common <$> (Specific <$> v .: "token")
+           <*> (Specific <$> v .: "format")
+           <*> (Specific <$> v .: "color")
+           <*> pure Default
+           <*> pure Default
+           <*> (Specific <$> v .: "limit")
+           <*> (Specific <$> v .: "sort")
+           <*> pure Default
+  parseJSON _ = mzero
+
+-- | Given two Optionals, pick the one that is the most specific.
+-- If both are specific, then favor the second (RHS).
+pickSpecific :: Optional a -> Optional a -> Optional a
+pickSpecific (Specific x) Default = pure x
+pickSpecific _ (Specific x)       = pure x
+pickSpecific _ _                  = Default
+
+-- | Given two Optional Bools, yeild True if either are True.
+optionTrue :: Optional Bool -> Optional Bool -> Optional Bool
+optionTrue (Specific True)   _                = Specific True
+optionTrue _                 (Specific False) = Specific False
+optionTrue Default           Default          = Default
+optionTrue _                 _                = Specific True
+
+-- | Merge two sets of Common options, where Specific overrides default.
+mergeCommon :: Common -> Common -> Common
+mergeCommon (Common aToken aFormat aColor aDay1 aDay2 aLimit aSort aMethod)
+            (Common bToken bFormat bColor bDay1 bDay2 bLimit bSort bMethod)
+  = Common (pickSpecific aToken bToken)
+           (pickSpecific aFormat bFormat)
+           (optionTrue aColor bColor)
+           (pickSpecific aDay1 bDay1)
+           (pickSpecific aDay2 bDay2)
+           (pickSpecific aLimit bLimit)
+           (optionTrue aSort bSort)
+           (pickSpecific aMethod bMethod)
 
 -- | Full command line option format.
-data Options = Options Token Common Command
+data Options = Options Common Command deriving (Show)
 
 -- | Parse the full command line options.
-parseOptions :: Parser Options
-parseOptions = Options <$> parseToken <*> parseCommon <*> parseCommand
+parseOptions :: Common -> Parser Options
+parseOptions common_def =
+  Options <$> ((common_def `mergeCommon`) <$> parseCommon)
+          <*> parseCommand
 
--- | Parse the required token option.
-parseToken :: Parser Token
-parseToken = strOption
+-- | Parse the token option.
+parseToken :: Parser (Optional Token)
+parseToken = optional $ strOption
   $  short 't'
   <> long "token"
   <> metavar "TOKEN"
@@ -80,7 +127,8 @@ parseSortMethod = SortByTitle
 -- | Parse the optional common options and flags.
 parseCommon :: Parser Common
 parseCommon = Common
-  <$> optional (strOption
+  <$> parseToken
+  <*> optional (strOption
                $  short 'f'
                <> long "format"
                <> metavar "BMFORMAT"
@@ -118,7 +166,7 @@ parseSearch = Search
   <*> optional (strOption $  short '/'
                           <> long "type"
                           <> metavar "SEARCH-TYPE"
-                          <> help "bid,url,listid,listname,creation")
+                          <> help "bid,url,groupid,groupname,creation")
 
 -- | Parse the show groups command.
 parseShowGroups :: Parser Command

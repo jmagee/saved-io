@@ -5,19 +5,42 @@ module Main where
 
 import            CLOpts                  as      CL
 import            SavedIO
+import            SavedIO.Util
 
+import            Data.Aeson                      (eitherDecode')
+import qualified  Data.ByteString.Lazy    as      B
 import            Data.Function                   (on)
 import            Data.List                       (sortBy)
 import            Data.Optional                   (Optional(..))
 import            Data.Text                       (Text)
 import qualified  Data.Text               as      T
 import qualified  Data.Text.IO            as      T
+import            System.Directory                (doesFileExist, getHomeDirectory)
 import            System.IO                       (hSetEncoding, stdout, utf8)
 
 main :: IO ()
 main = hSetEncoding stdout utf8 -- Hack for Windows to avoid "commitBuffer: invalid argument"
-     >> execParser (parseOptions `withInfo` "Command Line Interface to saved.io")
+     >> getRCDefaults
+     >>= execParser . (`withInfo` "Command Line Interface to saved.io") . parseOptions
      >>= run
+
+getRCDefaults :: IO Common
+getRCDefaults = do
+  rc <- fmap (++ "/.saved-io.rc") getHomeDirectory
+  exists <- doesFileExist rc
+  exists ? decode rc $ pure comDef
+    where
+      decode :: FilePath -> IO Common
+      decode prefs = do
+        d <- (eitherDecode' <$> B.readFile prefs) :: IO (Either String Common)
+        warn d
+        pure $ defaults d
+      warn (Left e)  = putStrLn $ "Warning: " ++ e
+      warn _         = pure ()
+      defaults (Left _)  = comDef
+      defaults (Right x) = x
+      comDef = Common Default Default Default Default
+                      Default Default Default Default
 
 -- | Print a list of Text.
 printTextList :: [Text] -> IO ()
@@ -34,14 +57,14 @@ sortMarks (Specific method) = case method of
     Descending  -> reverse . sortMarks Default
 
 run :: CL.Options -> IO ()
-run (CL.Options token (Common format color start end limit sort sortMethod) cmd) =
+run (CL.Options (Common t format color start end limit sort sortMethod) cmd) =
   case cmd of
     Listing group             ->
-      retrieveBookmarks token group start end limit
+      retrieveBookmarks (token t) group start end limit
       >>= executeIf (\x -> printTextList $ ppMarkDef <$> sortIf sort sortMethod x)
 
     Search query searchFormat ->
-      retrieveBookmarks token Default start end limit
+      retrieveBookmarks (token t) Default start end limit
       >>= executeIf (\x -> printTextList $ ppMarkDef <$>
                            sortIf sort
                                   sortMethod
@@ -50,13 +73,13 @@ run (CL.Options token (Common format color start end limit sort sortMethod) cmd)
                                                     x))
 
     ShowGroups                ->
-      retrieveGroups token >>= executeIf (\x -> printTextList $ ppBMList <$> x)
+      retrieveGroups (token t) >>= executeIf (\x -> printTextList $ ppBMGroup <$> x)
 
     AddMark title url group   ->
-      createBookmark token title url group >>= executeIf (\_ -> putStrLn "Success!")
+      createBookmark (token t) title url group >>= executeIf (\_ -> putStrLn "Success!")
 
     DelMark bkid              ->
-      deleteBookmark token bkid >>= executeIf (\_ -> pure ())
+      deleteBookmark (token t) bkid >>= executeIf (\_ -> pure ())
 
     where
       executeIf _ (Left err) = putStrLn $ "Error: " ++ err
@@ -66,3 +89,5 @@ run (CL.Options token (Common format color start end limit sort sortMethod) cmd)
       ppMarkDef = ppBookmark (extractShowy format) (maybeColor color)
       sortIf (Specific True) m x = sortMarks m x
       sortIf _ _ x               = x
+      token Default              = error "Missing token; -t|--token option required."
+      token (Specific x)         = x

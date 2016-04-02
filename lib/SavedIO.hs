@@ -73,7 +73,7 @@ module SavedIO (
   -- * Pretty Printing Utilities
 , ppSavedIOError
 , ppBookmark
-, ppBMList
+, ppBMGroup
 
   -- * Utilities
 , extractShowy
@@ -199,10 +199,10 @@ searchBookmarks (Url x) marks
 searchBookmarks (Title x) marks
   = L.filter (\y -> pack x `isInfixOf` _title y) marks
 
-searchBookmarks (ListID x) marks
+searchBookmarks (GroupID x) marks
   = L.filter (\y -> x == _list y) marks
 
-searchBookmarks (ListName x) marks
+searchBookmarks (GroupName x) marks
   = L.filter (\y -> pack x `isInfixOf` _listName y) marks
 
 searchBookmarks (Creation x) marks

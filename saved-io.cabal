@@ -78,6 +78,7 @@ executable saved-io
   build-depends:       base >=4.8 && <4.9,
                        bytestring,
                        aeson >= 0.7.0.6,
+                       directory,
                        http-conduit,
                        optional-args,
                        optparse-applicative,
