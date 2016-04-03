@@ -16,10 +16,12 @@ version:             0.1.0.0
 synopsis:            Saved-io library and client
 
 -- A longer description of the package.
--- description:         
+description:         Saved.io is a cloud based bookmarking site.  This
+                     package provides a library for accessing the saved.io API
+                     and a command line tool that interfaces with saved.io.
 
 -- The license under which the package is released.
--- license:             
+license:             BSD3
 
 -- The file containing the license text.
 license-file:        LICENSE

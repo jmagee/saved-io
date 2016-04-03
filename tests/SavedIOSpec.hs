@@ -36,13 +36,13 @@ spec = do
     it "understands title" $
       extractShowy (Specific "title") `shouldBe` ShowyField False False True False False False
     it "understands listid" $
-      extractShowy (Specific "listid") `shouldBe` ShowyField False False False True False False
+      extractShowy (Specific "groupid") `shouldBe` ShowyField False False False True False False
     it "understands listname" $
-      extractShowy (Specific "listname") `shouldBe` ShowyField False False False False True False
+      extractShowy (Specific "groupname") `shouldBe` ShowyField False False False False True False
     it "understands creation" $
       extractShowy (Specific "creation") `shouldBe` ShowyField False False False False False True
     it "understands all" $
-      extractShowy (Specific "bid,url,title,listid,listname,creation")
+      extractShowy (Specific "bid,url,title,groupid,groupname,creation")
       `shouldBe` ShowyField True True True True True True
 
 
