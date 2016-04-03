@@ -17,9 +17,12 @@ import            SavedIO.Util
 
 import            Control.Monad                   (mzero)
 import            Data.Aeson
+import qualified  Data.Aeson.Types        as      A
 import            Data.Optional                   (Optional(..))
+import            Data.Text                       (Text)
 import            Data.Time                       (Day)
 import            Options.Applicative     hiding  (optional)
+
 
 -- | Color flag.
 type Color  = Bool
@@ -41,6 +44,7 @@ data Command = Listing (Optional BMGroup)
              | ShowGroups
              | AddMark BMTitle BMUrl (Optional BMGroup)
              | DelMark BMId
+             | MakeRC
              deriving (Show)
 
 -- | Sorting method.
@@ -62,15 +66,36 @@ data Common = Common
 
 instance FromJSON Common where
   parseJSON (Object v) =
-    Common <$> (Specific <$> v .: "token")
-           <*> (Specific <$> v .: "format")
-           <*> (Specific <$> v .: "color")
+    Common <$>  v .:¿ "token"
+           <*>  v .:¿ "format"
+           <*>  v .:¿ "color"
            <*> pure Default
            <*> pure Default
-           <*> (Specific <$> v .: "limit")
-           <*> (Specific <$> v .: "sort")
+           <*> v .:¿ "limit"
+           <*> v .:¿ "sort"
            <*> pure Default
   parseJSON _ = mzero
+
+instance ToJSON Common where
+  toJSON (Common token format color _ _ limit sort _) =
+    object $  "token" `encodeOpt` token
+           ++ "format" `encodeOpt` format
+           ++ "color" `encodeOpt` color
+           ++ "limit" `encodeOpt` limit
+           ++ "sort" `encodeOpt` sort
+      where
+        encodeOpt _ Default = []
+        encodeOpt t (Specific x) = [t .= x]
+
+-- | Retrieve the value associated with the given key of an Object.
+-- The result is 'Default' if the key is not present.
+--
+-- This is equivelant to the .:? from the Aeson library, but
+-- converts the 'Maybe' result into an 'Optional' result.
+(.:¿) :: FromJSON a => Object -> Text -> A.Parser (Optional a)
+x .:¿ y = go =<< (x .:? y)
+  where go Nothing  = pure Default
+        go (Just g) = pure $ Specific g
 
 -- | Given two Optionals, pick the one that is the most specific.
 -- If both are specific, then favor the second (RHS).
@@ -189,6 +214,10 @@ parseAddMark = AddMark
 parseDelMark :: Parser Command
 parseDelMark = DelMark <$> argument auto (metavar "BMID" <> help "Bookmark ID")
 
+-- | Parse the MakeRC command
+parseMakeRC :: Parser Command
+parseMakeRC = pure MakeRC
+
 -- | Parse subcommands.
 parseCommand :: Parser Command
 parseCommand = subparser
@@ -197,6 +226,7 @@ parseCommand = subparser
   <> command "groups"     (parseShowGroups `withInfo` "Show groups")
   <> command "addmark"    (parseAddMark `withInfo` "Add bookmark")
   <> command "delmark"    (parseDelMark `withInfo` "Delete bookmark")
+  <> command "mkrc"       (parseMakeRC `withInfo` "Make RC File")
 
 -- | Display help for a parser.
 withInfo :: Parser a -> String -> ParserInfo a

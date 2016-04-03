@@ -40,7 +40,7 @@ import qualified  System.Console.ANSI     as      CS
 -- | The saved.io API Token.  It can be generated here: linkme.
 type Token          = String
 
--- | The bookmark group.  saved.io commonly refers to this as a "list", but 
+-- | The bookmark group.  saved.io commonly refers to this as a "list", but
 -- that terminology is a bit overloaded.
 type BMGroup        = String
 
@@ -129,8 +129,8 @@ ppBookmark (ShowyField sID sURL sTitle sList sListName sCreation)
         ppID       = sID       ? append "\nID: "       (tshow theID)       $ ""
         ppTitle    = sTitle    ? append "\nBookmark: " (colorize' CS.Green theTitle) $ ""
         ppUrl      = sURL      ? append "\nURL: "      (colorize' CS.Blue theURL) $ ""
-        ppBlist    = sList     ? append "\nList ID: "  (tshow theList)     $ ""
-        ppLname    = sListName ? append "\nList: "     theListName         $ ""
+        ppBlist    = sList     ? append "\nGroup ID: " (tshow theList)     $ ""
+        ppLname    = sListName ? append "\nGroup: "    theListName         $ ""
         ppCreation = sCreation ? append "\nCreated: "  (tshow theCreation) $ ""
 
 -- Show for Text
@@ -146,7 +146,7 @@ colorize c t = Prelude.foldl append c' [t, c'']
 -- | A response object from saved.io.  This is returned on error
 -- and as a response to POST requests.  The response may have an optional
 -- data payload as well, but we ignore it.
--- 
+--
 -- The ignored data payload is usually either empty or contains a copy
 -- of the content just POSTed.
 data SavedIOResponse=
@@ -217,4 +217,3 @@ convert s =
 -- below parses it as "2016-01-02".
 dateFromString :: String -> Day
 dateFromString = parseTimeOrError True defaultTimeLocale "%Y-%-m-%-d %H:%M:%S"
-
