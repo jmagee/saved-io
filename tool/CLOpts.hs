@@ -23,7 +23,6 @@ import            Data.Text                       (Text)
 import            Data.Time                       (Day)
 import            Options.Applicative     hiding  (optional)
 
-
 -- | Color flag.
 type Color  = Bool
 

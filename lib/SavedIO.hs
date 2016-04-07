@@ -80,6 +80,7 @@ module SavedIO (
 , extractSearchKey
 ) where
 
+import            SavedIO.Internal
 import            SavedIO.Types
 import            SavedIO.Util
 
@@ -89,8 +90,7 @@ import qualified  Data.ByteString.Lazy.Char8 as   BP
 import qualified  Data.List               as      L
 import            Data.Optional                   (Optional(..))
 import            Data.Text               hiding  (foldr, foldl, group)
-import            Data.Time                       (Day, defaultTimeLocale,
-                                                   formatTime, UTCTime(..))
+import            Data.Time                       (Day)
 import            Network.HTTP.Conduit            (simpleHttp, newManager,
                                                    parseUrl, httpLbs, method,
                                                    requestBody, RequestBody(..),
@@ -119,35 +119,6 @@ savedIOPOST url body = do
   result <- httpLbs req manager
   pure $ responseBody result
 
--- | Convert a Day into epoch time.
-epochTime :: Day -> String
-epochTime = formatTime defaultTimeLocale "%s" . flip UTCTime 0
-
--- | Format a POST/GET parameter, allowing for
--- optional parameters (in which case Nothing will yield an empty string.)
--- Examples: formatParam "limit:" (Just "2")  ->  "limit:2"
---           formatParam "limit:" Nothint     ->  ""
-formatParam :: String -> Optional String -> String
-formatParam _ Default      = ""
-formatParam s (Specific x) = s ++ x
-
--- | Format a token into a URL parameter.
-tokenStr :: Token -> String
-tokenStr = formatParam "&token=" . Specific
-
--- | Join URL parameters with an ampersand.
-(>&&<) :: String -> String -> String
-left >&&< right = left ++ "&" ++ right
-
--- | Append an Optional string.
--- >>> "foo" +?+ Default
--- "foo"
--- >>> "foo" +?+ (Specific "bar")
--- "foobar"
-(+?+) :: String -> Optional String -> String
-s +?+ Default       = s
-s +?+ (Specific s2) = s ++ s2
-
 -- | Retrieve a list of bookmarks.
 retrieveBookmarks :: Token            -- ^ API Token
                   -> Optional BMGroup -- ^ Bookmark Group
@@ -156,34 +127,20 @@ retrieveBookmarks :: Token            -- ^ API Token
                   -> Optional Int     -- ^ Limit
                   -> IO (Either String [Bookmark])
 retrieveBookmarks token group from to limit = do
-  let stream = savedIO query
+  let stream = savedIO $ retrieveBookmarksQ token group from to limit
   d <- (eitherDecode <$> stream) :: IO (Either String [Bookmark])
   case d of
     Left err    -> fmap Left (handleDecodeError stream err)
     Right marks -> pure $ Right marks
-  where query = foldl (>&&<)
-                      ("bookmarks/" +?+ group)
-                      [ tokenStr token
-                      , fromStr from
-                      , toStr to
-                      , limitStr limit
-                      ]
-        toStr :: Optional Day -> String
-        toStr = formatParam "to=" . (epochTime <$>)
-        fromStr :: Optional Day -> String
-        fromStr = formatParam "from=" . (epochTime <$>)
-        limitStr :: Optional Int -> String
-        limitStr = formatParam "limit=" . (show <$>)
 
 -- | Retrieve the list of bookmark groups.
 retrieveGroups :: Token -> IO (Either String [Group])
 retrieveGroups token = do
-  let stream = savedIO query
+  let stream = savedIO $ retrieveGroupsQ token
   d <- (eitherDecode <$> stream) :: IO (Either String [Group])
   case d of
     Left err    -> fmap Left (handleDecodeError stream err)
     Right l     -> pure $ Right l
-  where query = "lists" >&&< tokenStr token
 
 -- | Search bookmarks.
 --
@@ -214,13 +171,9 @@ createBookmark :: Token             -- ^ API Token
                -> BMUrl             -- ^ Bookmark URL
                -> Optional BMGroup  -- ^ Optional Bookmark group
                -> IO (Either String Bool) -- ^ Either API error message or Success flag
-createBookmark token title url group = postAction urlSuffix query
+createBookmark token title url group =
+  postAction urlSuffix $ createBookmarkQ token title url group
     where urlSuffix = "create"
-          query     = foldl (>&&<) (formatParam "token=" $ pure token)
-                                   [ formatParam "title=" $ pure title
-                                   , formatParam "url=" $ pure url
-                                   , formatParam "list=" group
-                                   ]
 
 -- | Delete a bookmark.
 deleteBookmark :: Token   -- ^ API token
@@ -229,10 +182,9 @@ deleteBookmark :: Token   -- ^ API token
                -- Note that this call returns succes even if it
                -- did not actually delete anything.
                -> IO (Either String Bool)
-deleteBookmark token bkid = postAction urlSuffix query
+deleteBookmark token bkid =
+  postAction urlSuffix $ deleteBookmarkQ token bkid
     where urlSuffix = "delete"
-          query     = formatParam "token=" (Specific token)
-                    >&&< formatParam "bk_id=" (Specific $ show bkid)
 
 -- | Perform a url POST action, and check for API failure.
 postAction :: String -> String -> IO (Either String Bool)
