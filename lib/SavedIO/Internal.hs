@@ -5,6 +5,8 @@ module SavedIO.Internal
 , retrieveGroupsQ
 , createBookmarkQ
 , deleteBookmarkQ
+, (>&&<)
+, (+?+)
 ) where
 
 import            SavedIO.Types
@@ -21,12 +23,12 @@ retrieveBookmarksQ :: Token
                    -> Optional Int
                    -> String
 retrieveBookmarksQ token group from to limit =
-  foldl (>&&<) ("bookmarks/" +?+ group)
-               [ tokenStr token
-               , fromStr from
-               , toStr to
-               , limitStr limit
-               ]
+  "bookmarks/" +?+ group ++ foldl (>&&<) "&"
+                                         [ tokenStr token
+                                         , fromStr from
+                                         , toStr to
+                                         , limitStr limit
+                                         ]
     where
       toStr = formatParam "to=" . (epochTime <$>)
       fromStr = formatParam "from=" . (epochTime <$>)
@@ -57,6 +59,8 @@ deleteBookmarkQ token bkid =
 
 -- | Join URL parameters with an ampersand.
 (>&&<) :: String -> String -> String
+left >&&< []    = left
+[]   >&&< right = right
 left >&&< right = left ++ "&" ++ right
 
 -- | Append an Optional string.
@@ -82,4 +86,4 @@ formatParam s (Specific x) = s ++ x
 
 -- | Format a token into a URL parameter.
 tokenStr :: Token -> String
-tokenStr = formatParam "&token=" . Specific
+tokenStr = formatParam "token=" . Specific
