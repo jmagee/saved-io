@@ -8,6 +8,7 @@ module SavedIOSpec (
 import            SavedIO
 import            SavedIO.Internal
 import            SavedIO.Types
+import            SavedIO.Util
 
 import            Data.Optional                   (Optional(..))
 import            Data.Text
@@ -90,4 +91,36 @@ spec = do
     prop "s +?+ Default == s" $
       \s -> s +?+ Default == s
     prop "s +?+ (Specific t) == s ++ t" $
-      \s t -> s +?+ (Specific t) == s ++ t
+      \s t -> s +?+ Specific t == s ++ t
+
+  describe "epochTime" $ do
+    it "knows how long since 2016-04-08" $
+      epochTime (fromGregorian 2016 04 09)  == "1460160000"
+    it "knows how long since 1970-01-01" $
+      epochTime (fromGregorian 1970 01 01)  == "0"
+
+  describe "formatParam" $ do
+    prop "s `formatParam` Default == empty string" $
+      \s -> formatParam s Default == ""
+    prop "s `formatParamt` (Specific t) == s ++ t" $
+      \s t -> formatParam s (Specific t) == s ++ t
+
+  describe "tokenStr" $
+    prop "tokenStr s == \"token=s\"" $
+      \s -> tokenStr s == "token=" ++ s
+
+  describe "if'" $ do
+    prop "if' == if-then-else :: Int" $
+      \x y z -> if' x y z == if x then y else z :: Int
+    prop "if' == if-then-else :: Char" $
+      \x y z -> if' x y z == if x then y else z :: Char
+    prop "if' == if-then-else :: [Float]) " $
+      \x y z -> if' x y z == if x then y else z :: [Float]
+
+  describe "?" $ do
+    prop "? == if-then-else :: Int" $
+      \x y z -> (x ? y $ z) == if x then y else z :: Int
+    prop "? == if-then-else :: Char" $
+      \x y z -> (x ? y $ z) == if x then y else z :: Char
+    prop "? == if-then-else :: [Float]) " $
+      \x y z -> (x ? y $ z) == if x then y else z :: [Float]
