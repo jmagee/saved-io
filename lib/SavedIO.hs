@@ -47,7 +47,7 @@
 -- >>> deleteBookmark token 90210
 --
 -- == Pretty print (format) a list of bookmarks
--- >>> ppBookmark (ShowyField True True True True True True) False <$$$>
+-- >>> ppBookmark (BookmarkConfig (pack "title, url") Nothing) <$$$>
 --     retrieveBookmarks token Default Default Default Default
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -68,15 +68,16 @@ module SavedIO (
 , BMUrl
 , Query
 , Bookmark(..)
+, BookmarkConfig(..)
 , SavedIOResponse(..)
 
   -- * Pretty Printing Utilities
 , ppSavedIOError
 , ppBookmark
+, defBookColors
 , ppBMGroup
 
   -- * Utilities
-, extractShowy
 , extractSearchKey
 ) where
 

@@ -78,6 +78,7 @@ executable saved-io
   
   -- Other library packages from which modules are imported.
   build-depends:       base >=4.8 && <4.9,
+                       ansi-terminal,
                        bytestring,
                        aeson >= 0.7.0.6,
                        aeson-pretty,

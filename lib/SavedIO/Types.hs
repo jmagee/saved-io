@@ -7,8 +7,8 @@ module SavedIO.Types (
 , BMGroup
 , BMFormat
 , Query
-, ShowyField(..)
 , Bookmark(..)
+, BookmarkConfig(..)
 , SavedIOResponse(..)
 , Group(..)
 , SearchKey(..)
@@ -17,8 +17,8 @@ module SavedIO.Types (
 , BMId
 
   -- * Pretty Printing Utilities
-, extractShowy
 , ppBookmark
+, defBookColors
 , ppBMGroup
 , ppSavedIOError
 
@@ -26,13 +26,12 @@ module SavedIO.Types (
 , extractSearchKey
 ) where
 
-import            SavedIO.Util
-
 import            Control.Monad                   (mzero)
 import            Data.Aeson
 import qualified  Data.List               as      L
 import            Data.Optional                   (Optional(..))
-import            Data.Text               hiding  (foldr, foldl, group)
+import            Data.Text                       (Text)
+import qualified  Data.Text               as      T
 import            Data.Time                       (Day, defaultTimeLocale,
                                                    parseTimeOrError)
 import qualified  System.Console.ANSI     as      CS
@@ -67,34 +66,6 @@ type BMTitle        = String
 -- | Bookmark ID. (saved.io's internal identiciation numbers.)
 type BMId           = Int
 
--- | Flags to indicate which fields of a Bookmark record to print.
-data ShowyField =
-  ShowyField { _showId       :: Bool
-             , _showUrl      :: Bool
-             , _showTitle    :: Bool
-             , _showList     :: Bool
-             , _showListName :: Bool
-             , _showCreation :: Bool
-             } deriving (Eq, Show)
-
--- | Extract a ShowyField from a BMFormat string.'
--- This matches the string for any text string matching the bookmark
--- fields - each match indicates that the field should be shown.
-extractShowy :: Optional BMFormat -> ShowyField
-extractShowy Default = ShowyField False True True False True False
-extractShowy (Specific format)
-  | "all" `L.isInfixOf` format  = ShowyField True True True True True True
-  | notAny format               = extractShowy Default -- See Note: notAny
-  | otherwise                   = fromList $ (`L.isInfixOf` format) <$> needles
-      where needles = ["bid", "url", "title", "groupid", "groupname", "creation"]
-            fromList [a, b, c, d, e, f] = ShowyField a b c d e f
-            fromList _ = undefined -- unreachable
-            -- Note: notAny
-            -- If BMFormat contains no valid field identifiers, then silently
-            -- fall back to the default.
-            notAny :: String -> Bool
-            notAny f = not . or $ fmap (`L.isInfixOf` f) needles
-
 -- | saved.io Bookmark.
 data Bookmark =
   Bookmark { _id       :: BMId
@@ -115,33 +86,54 @@ instance FromJSON Bookmark where
              <*> (dateFromString <$> v .: "creation_date")
   parseJSON _ = mzero
 
+type ColorScheme = [(String, CS.Color)]
+data BookmarkConfig =
+  BookmarkConfig { _keys        :: Text
+                 , _colorScheme :: Maybe ColorScheme
+                 } deriving (Show)
+
+defBookColors :: ColorScheme
+defBookColors =
+  [ ("id", CS.Cyan)
+  , ("title", CS.Green)
+  , ("url", CS.Blue)
+  , ("groupid", CS.Yellow)
+  , ("groupname", CS.Yellow)
+  , ("creation", CS.Red)
+  ]
+
 -- | Pretty print a saved.io bookmark.
-ppBookmark :: ShowyField -- ^ A ShowyField indicating which fields to display.
-           -> Bool       -- ^ Whether to use color.
-           -> Bookmark   -- ^ The bookmark to print.
-           -> Text       -- ^ The formatted result.
-ppBookmark (ShowyField sID sURL sTitle sList sListName sCreation)
-           color
+ppBookmark :: BookmarkConfig  -- ^ Pretty printer configuration for bookmarks
+           -> Bookmark        -- ^ The bookmark to print
+           -> Text            -- ^ The formatted result.-}
+ppBookmark (BookmarkConfig k scheme)
            (Bookmark theID theURL theTitle theList theListName theCreation)
-  = Prelude.foldr append "\n" [ppID, ppTitle, ppUrl, ppBlist, ppLname, ppCreation]
-      where
-        colorize' c t  = color ? colorize c t $ t
-        ppID       = sID       ? append "\nID: "       (tshow theID)       $ ""
-        ppTitle    = sTitle    ? append "\nBookmark: " (colorize' CS.Green theTitle) $ ""
-        ppUrl      = sURL      ? append "\nURL: "      (colorize' CS.Blue theURL) $ ""
-        ppBlist    = sList     ? append "\nGroup ID: " (tshow theList)     $ ""
-        ppLname    = sListName ? append "\nGroup: "    theListName         $ ""
-        ppCreation = sCreation ? append "\nCreated: "  (tshow theCreation) $ ""
+  = T.concat . newlineate $ prettyField <$> T.splitOn "," k
+    where
+      newlineate = fmap $ flip T.append "\n"
+      colorize' = colorize scheme
+      prettyField s = case s of
+        "id"        -> T.append "ID: "       $ colorize' "id" $ tshow theID
+        "title"     -> T.append "Bookmark: " $ colorize' "title" theTitle
+        "url"       -> T.append "URL: "      $ colorize' "url" theURL
+        "groupid"   -> T.append "Group ID: " $ colorize' "groupid" $ tshow theList
+        "groupname" -> T.append "Group: "    $ colorize' "groupname" theListName
+        "creation"  -> T.append "Created: "  $ colorize' "creation" $ tshow theCreation
+        e@_         -> T.append "unrecognized format " e
 
 -- Show for Text
 tshow :: Show a => a -> Text
-tshow = pack . show
+tshow = T.pack . show
 
 -- Colorize it!
-colorize :: CS.Color -> Text -> Text
-colorize c t = Prelude.foldl append c' [t, c'']
-  where c'  = pack $ CS.setSGRCode [CS.SetColor CS.Foreground CS.Vivid c]
-        c'' = pack $ CS.setSGRCode [CS.Reset]
+colorize :: Maybe ColorScheme -> String -> Text -> Text
+colorize Nothing       key text = colorize (Just []) key text
+colorize (Just scheme) key text =
+  case lookup key scheme of
+    Nothing       -> text
+    (Just color)  -> foldl T.append (startColor color) [text, endColor]
+  where startColor c = T.pack $ CS.setSGRCode [CS.SetColor CS.Foreground CS.Vivid c]
+        endColor     = T.pack $ CS.setSGRCode [CS.Reset]
 
 -- | A response object from saved.io.  This is returned on error
 -- and as a response to POST requests.  The response may have an optional
@@ -162,7 +154,7 @@ instance FromJSON SavedIOResponse where
 
 -- | Pretty print a SavedIOResponse.
 ppSavedIOError :: SavedIOResponse -> Text
-ppSavedIOError (SavedIOResponse _ msg) = append "Saved.io error: " msg
+ppSavedIOError (SavedIOResponse _ msg) = T.append "Saved.io error: " msg
 
 -- | A "group" of bookmarks.
 data Group = Group Int Text
@@ -176,7 +168,7 @@ instance FromJSON Group where
 
 -- | Pretty print a bookmark group
 ppBMGroup :: Group -> Text
-ppBMGroup (Group _ n) = n `append` "\n"
+ppBMGroup (Group _ n) = n
 
 type SearchString = String
 type SearchInt    = Int

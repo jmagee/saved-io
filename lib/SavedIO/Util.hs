@@ -4,6 +4,7 @@ module SavedIO.Util
 ( if'
 , (?)
 , optional
+, perhaps
 ) where
 
 import            Control.Applicative             (Alternative, (<|>))
@@ -25,3 +26,13 @@ infixr 1 ?
 -- instead of Maybe.
 optional :: Alternative f => f a -> f (Optional a)
 optional v = Specific <$> v <|> pure Default
+
+-- | The perhaps function takes a default value, a function, and an Optional
+-- value.  If the Optional value is Default, the function returns the default
+-- value.  Otherwise, it applies the function the value inside the Specific and
+-- returns the result.
+--
+-- Like the function maybe but for Optional.
+perhaps :: b -> (a -> b) -> Optional a -> b
+perhaps def _ Default      = def
+perhaps _   f (Specific x) = f x

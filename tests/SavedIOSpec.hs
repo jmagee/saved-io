@@ -24,29 +24,29 @@ spec = do
     it "prints empty with prefix" $
       ppSavedIOError (SavedIOResponse False "") `shouldBe` pack "Saved.io error: "
 
-  let defaultShowy = ShowyField False True True False True False
-  describe "extractShowy" $ do
-    it "has the expected default" $
-      extractShowy Default `shouldBe` defaultShowy
-    it "handles garbage" $
-      extractShowy (Specific "sdjfklsdfhhwherklasdf jkladsf jk $%$&%*") `shouldBe` defaultShowy
-    it "understands bid" $
-      extractShowy (Specific "bid") `shouldBe` ShowyField True False False False False False
-    it "doesn't overmatch on id" $
-      extractShowy (Specific "id") `shouldBe` defaultShowy
-    it "understands url" $
-      extractShowy (Specific "url") `shouldBe` ShowyField False True False False False False
-    it "understands title" $
-      extractShowy (Specific "title") `shouldBe` ShowyField False False True False False False
-    it "understands listid" $
-      extractShowy (Specific "groupid") `shouldBe` ShowyField False False False True False False
-    it "understands listname" $
-      extractShowy (Specific "groupname") `shouldBe` ShowyField False False False False True False
-    it "understands creation" $
-      extractShowy (Specific "creation") `shouldBe` ShowyField False False False False False True
-    it "understands all" $
-      extractShowy (Specific "bid,url,title,groupid,groupname,creation")
-      `shouldBe` ShowyField True True True True True True
+  {-let defaultShowy = ShowyField False True True False True False-}
+  {-describe "extractShowy" $ do-}
+    {-it "has the expected default" $-}
+      {-extractShowy Default `shouldBe` defaultShowy-}
+    {-it "handles garbage" $-}
+      {-extractShowy (Specific "sdjfklsdfhhwherklasdf jkladsf jk $%$&%*") `shouldBe` defaultShowy-}
+    {-it "understands bid" $-}
+      {-extractShowy (Specific "bid") `shouldBe` ShowyField True False False False False False-}
+    {-it "doesn't overmatch on id" $-}
+      {-extractShowy (Specific "id") `shouldBe` defaultShowy-}
+    {-it "understands url" $-}
+      {-extractShowy (Specific "url") `shouldBe` ShowyField False True False False False False-}
+    {-it "understands title" $-}
+      {-extractShowy (Specific "title") `shouldBe` ShowyField False False True False False False-}
+    {-it "understands listid" $-}
+      {-extractShowy (Specific "groupid") `shouldBe` ShowyField False False False True False False-}
+    {-it "understands listname" $-}
+      {-extractShowy (Specific "groupname") `shouldBe` ShowyField False False False False True False-}
+    {-it "understands creation" $-}
+      {-extractShowy (Specific "creation") `shouldBe` ShowyField False False False False False True-}
+    {-it "understands all" $-}
+      {-extractShowy (Specific "bid,url,title,groupid,groupname,creation")-}
+      {-`shouldBe` ShowyField True True True True True True-}
 
   describe "retrieveBookmarksQ" $ do
     it "produces a correctly formatted query" $
@@ -84,7 +84,7 @@ spec = do
     it "the cat frowns " $ "foo" >&&< ""    `shouldBe` "foo"
     it "the cat meows"   $ ""    >&&< "bar" `shouldBe` "bar"
     it "the cat vomits"  $ ""    >&&< ""    `shouldBe` ""
-    prop "is associative" $ 
+    prop "is associative" $
       \x y z -> x >&&< (y >&&< z) == (x >&&< y) >&&< z
 
   describe "+?+" $ do

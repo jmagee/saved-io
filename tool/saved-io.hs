@@ -72,9 +72,9 @@ run (CL.Options c@(Common t format color start end limit sort sortMethod) cmd) =
       B.putStrLn $ encodePretty $ toJSON c
 
     where
-      maybeColor Default      = False
-      maybeColor (Specific x) = x
-      ppMarkDef = ppBookmark (extractShowy format) (maybeColor color)
+      formatText = perhaps "" T.pack
+      useColor = perhaps Nothing (\x -> x ? Just defBookColors $ Nothing) color
+      ppMarkDef = ppBookmark $ BookmarkConfig (formatText format) useColor
       sortIf (Specific True) m x = sortMarks m x
       sortIf _ _ x               = x
       token Default              = error "Missing token; -t|--token option required."
@@ -82,7 +82,7 @@ run (CL.Options c@(Common t format color start end limit sort sortMethod) cmd) =
 
 -- | Print a list of Text.
 printTextList :: [Text] -> IO ()
-printTextList = T.putStrLn . T.concat
+printTextList = T.putStrLn . T.intercalate "\n"
 
 -- | Print a warning on failure.
 warn :: Either String a -> IO ()
