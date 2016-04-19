@@ -95,7 +95,7 @@ type ColorScheme = [(String, CS.Color)]
 data BookmarkConfig =
   BookmarkConfig { _keys        :: Text
                  , _colorScheme :: Maybe ColorScheme
-                 } deriving (Show)
+                 } deriving (Show, Eq)
 
 -- | Default color scheme for bookmark.
 defBookColors :: ColorScheme

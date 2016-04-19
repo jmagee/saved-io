@@ -13,6 +13,7 @@ import            SavedIO.Util
 import            Data.Optional                   (Optional(..))
 import            Data.Text
 import            Data.Time                       (fromGregorian)
+import qualified  System.Console.ANSI     as      CS
 import            Test.Hspec
 import            Test.Hspec.QuickCheck
 
@@ -31,6 +32,24 @@ spec = do
       ppBMGroup (Group 7 "Stuff") `shouldBe` pack "Stuff"
     it "prints some other group" $
       ppBMGroup (Group 3 "abZert14") `shouldBe` pack "abZert14"
+
+  describe "defBookColors" $
+    it "is full of pretty colors" $
+      defBookColors `shouldBe` [ ("id", CS.Cyan)
+                               , ("title", CS.Green)
+                               , ("url", CS.Blue)
+                               , ("groupid", CS.Yellow)
+                               , ("groupname", CS.Yellow)
+                               , ("creation", CS.Red)
+                               ]
+
+  describe "defBookKeys" $
+    it "has the expected keys" $
+      defBookKeys `shouldBe` "title,url,groupname"
+
+  describe "defBookmarkConfig" $
+    it "is expected" $
+      defBookmarkConfig `shouldBe` BookmarkConfig defBookKeys Nothing
 
   describe "retrieveBookmarksQ" $ do
     it "produces a correctly formatted query" $

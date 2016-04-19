@@ -99,9 +99,10 @@ executable saved-io
 
 test-suite hspec
   build-depends:       base >=4.8 && <4.9,
+                       ansi-terminal,
                        hspec >= 1.8,
-                       SavedIO,
                        optional-args,
+                       SavedIO,
                        text,
                        time
   default-language:    Haskell2010
