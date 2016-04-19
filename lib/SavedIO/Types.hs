@@ -86,12 +86,16 @@ instance FromJSON Bookmark where
              <*> (dateFromString <$> v .: "creation_date")
   parseJSON _ = mzero
 
+-- | Color scheme pair to match a key to a color.
 type ColorScheme = [(String, CS.Color)]
+
+-- | Config for bookmark pretty printing.
 data BookmarkConfig =
   BookmarkConfig { _keys        :: Text
                  , _colorScheme :: Maybe ColorScheme
                  } deriving (Show)
 
+-- | Default color scheme for bookmark.
 defBookColors :: ColorScheme
 defBookColors =
   [ ("id", CS.Cyan)
@@ -158,12 +162,12 @@ ppSavedIOError (SavedIOResponse _ msg) = T.append "Saved.io error: " msg
 
 -- | A "group" of bookmarks.
 data Group = Group Int Text
-              deriving (Show)
+             deriving (Show)
 
 instance FromJSON Group where
   parseJSON (Object v)  =
     Group <$> (convert <$> v .: "id")
-            <*> v .: "name"
+          <*> v .: "name"
   parseJSON _ = mzero
 
 -- | Pretty print a bookmark group

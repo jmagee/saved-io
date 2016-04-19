@@ -25,6 +25,9 @@ main = hSetEncoding stdout utf8 -- Hack for Windows to avoid "commitBuffer: inva
      >>= execParser . (`withInfo` "Command Line Interface to saved.io") . parseOptions
      >>= run
 
+-- | Read default settings for Common options from RC file.
+-- If there is no RC file or it cannot be decoded then this returns
+-- Common of all Default.
 getRCDefaults :: IO Common
 getRCDefaults = do
   rc <- fmap (++ "/.saved-io.rc") getHomeDirectory

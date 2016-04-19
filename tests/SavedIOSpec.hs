@@ -24,29 +24,13 @@ spec = do
     it "prints empty with prefix" $
       ppSavedIOError (SavedIOResponse False "") `shouldBe` pack "Saved.io error: "
 
-  {-let defaultShowy = ShowyField False True True False True False-}
-  {-describe "extractShowy" $ do-}
-    {-it "has the expected default" $-}
-      {-extractShowy Default `shouldBe` defaultShowy-}
-    {-it "handles garbage" $-}
-      {-extractShowy (Specific "sdjfklsdfhhwherklasdf jkladsf jk $%$&%*") `shouldBe` defaultShowy-}
-    {-it "understands bid" $-}
-      {-extractShowy (Specific "bid") `shouldBe` ShowyField True False False False False False-}
-    {-it "doesn't overmatch on id" $-}
-      {-extractShowy (Specific "id") `shouldBe` defaultShowy-}
-    {-it "understands url" $-}
-      {-extractShowy (Specific "url") `shouldBe` ShowyField False True False False False False-}
-    {-it "understands title" $-}
-      {-extractShowy (Specific "title") `shouldBe` ShowyField False False True False False False-}
-    {-it "understands listid" $-}
-      {-extractShowy (Specific "groupid") `shouldBe` ShowyField False False False True False False-}
-    {-it "understands listname" $-}
-      {-extractShowy (Specific "groupname") `shouldBe` ShowyField False False False False True False-}
-    {-it "understands creation" $-}
-      {-extractShowy (Specific "creation") `shouldBe` ShowyField False False False False False True-}
-    {-it "understands all" $-}
-      {-extractShowy (Specific "bid,url,title,groupid,groupname,creation")-}
-      {-`shouldBe` ShowyField True True True True True True-}
+  describe "ppBMGroup" $ do
+    it "prints a group" $
+      ppBMGroup (Group 1 "Stuff") `shouldBe` pack "Stuff"
+    it "prints a group again" $
+      ppBMGroup (Group 7 "Stuff") `shouldBe` pack "Stuff"
+    it "prints some other group" $
+      ppBMGroup (Group 3 "abZert14") `shouldBe` pack "abZert14"
 
   describe "retrieveBookmarksQ" $ do
     it "produces a correctly formatted query" $
