@@ -17,8 +17,10 @@ module SavedIO.Types (
 , BMId
 
   -- * Pretty Printing Utilities
-, ppBookmark
 , defBookColors
+, defBookKeys
+, defBookmarkConfig
+, ppBookmark
 , ppBMGroup
 , ppSavedIOError
 
@@ -106,6 +108,14 @@ defBookColors =
   , ("creation", CS.Red)
   ]
 
+-- | Default bookmark key string
+defBookKeys :: Text
+defBookKeys = "title,url,groupname"
+
+-- | Default bookmark config
+defBookmarkConfig :: BookmarkConfig
+defBookmarkConfig = BookmarkConfig defBookKeys Nothing
+
 -- | Pretty print a saved.io bookmark.
 ppBookmark :: BookmarkConfig  -- ^ Pretty printer configuration for bookmarks
            -> Bookmark        -- ^ The bookmark to print
@@ -114,8 +124,8 @@ ppBookmark (BookmarkConfig k scheme)
            (Bookmark theID theURL theTitle theList theListName theCreation)
   = T.concat . newlineate $ prettyField <$> T.splitOn "," k
     where
-      newlineate = fmap $ flip T.append "\n"
-      colorize' = colorize scheme
+      newlineate    = fmap $ flip T.append "\n"
+      colorize'     = colorize scheme
       prettyField s = case s of
         "id"        -> T.append "ID: "       $ colorize' "id" $ tshow theID
         "title"     -> T.append "Bookmark: " $ colorize' "title" theTitle

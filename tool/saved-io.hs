@@ -75,7 +75,7 @@ run (CL.Options c@(Common t format color start end limit sort sortMethod) cmd) =
       B.putStrLn $ encodePretty $ toJSON c
 
     where
-      formatText = perhaps "" T.pack
+      formatText = perhaps defBookKeys T.pack
       useColor = perhaps Nothing (\x -> x ? Just defBookColors $ Nothing) color
       ppMarkDef = ppBookmark $ BookmarkConfig (formatText format) useColor
       sortIf (Specific True) m x = sortMarks m x

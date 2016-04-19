@@ -73,8 +73,10 @@ module SavedIO (
 
   -- * Pretty Printing Utilities
 , ppSavedIOError
-, ppBookmark
 , defBookColors
+, defBookKeys
+, defBookmarkConfig
+, ppBookmark
 , ppBMGroup
 
   -- * Utilities
