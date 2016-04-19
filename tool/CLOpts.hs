@@ -199,10 +199,10 @@ parseShowGroups = pure ShowGroups
 -- |  Parse the add bookmark command.
 parseAddMark :: Parser Command
 parseAddMark = AddMark
-           <$> strOption ( long "title"
+           <$> strOption (  long "title"
                          <> metavar "BMTITLE"
                          <> help "Bookmark title")
-           <*> strOption ( long "url"
+           <*> strOption (  long "url"
                          <> metavar "BMURL"
                          <> help "Bookmark URL")
            <*> optional (strOption $  long "group"
