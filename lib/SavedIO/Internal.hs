@@ -12,11 +12,15 @@ module SavedIO.Internal
 , tokenStr
 ) where
 
-import            SavedIO.Types
+import           SavedIO.Types
 
-import            Data.Optional                   (Optional(..))
-import            Data.Time                       (Day, defaultTimeLocale,
-                                                   formatTime, UTCTime(..))
+import           Data.Optional (Optional (..))
+import           Data.Time     (Day, UTCTime (..), defaultTimeLocale,
+                                formatTime)
+
+-- | The developer API key
+devKey :: Token
+devKey = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 
 -- | Prepare the query string for retrieveBookmark
 retrieveBookmarksQ :: Token
@@ -89,4 +93,5 @@ formatParam s (Specific x) = s ++ x
 
 -- | Format a token into a URL parameter.
 tokenStr :: Token -> String
-tokenStr = formatParam "token=" . Specific
+tokenStr t = formatParam "devkey=" (Specific devKey)
+           ++ formatParam "key=" (Specific t)

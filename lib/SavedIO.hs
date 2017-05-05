@@ -102,7 +102,7 @@ import            Network.HTTP.Client             (defaultManagerSettings)
 
 -- | Base URL for saved io API.
 savedIOURL :: String
-savedIOURL = "http://devapi.saved.io/v1/"
+savedIOURL = "http://devapi.saved.io/"
 
 -- | Fetch a URL from saved.io.
 savedIO :: String -> IO B.ByteString
