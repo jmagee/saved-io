@@ -87,6 +87,7 @@ executable saved-io
                        optional-args,
                        optparse-applicative,
                        SavedIO,
+                       semigroups,
                        text,
                        time
   

@@ -19,6 +19,7 @@ import            Control.Monad                   (mzero)
 import            Data.Aeson
 import qualified  Data.Aeson.Types        as      A
 import            Data.Optional                   (Optional(..))
+import            Data.Semigroup                  ((<>))
 import            Data.Text                       (Text)
 import            Data.Time                       (Day)
 import            Options.Applicative     hiding  (optional)
