@@ -69,13 +69,6 @@ type BMId           = String
 
 -- | saved.io Bookmark.
 data Bookmark =
-  {-Bookmark { _id       :: BMId-}
-           {-, _url      :: Text-}
-           {-, _title    :: Text-}
-           {-, _list     :: Int-}
-           {-, _listName :: Text-}
-           {-, _creation :: Day-}
-           {-} deriving (Show)-}
   Bookmark { _id       :: BMId
            , _url      :: Text
            , _title    :: Text
@@ -89,8 +82,6 @@ instance FromJSON Bookmark where
              <*> v .: "bk_url"
              <*> v .: "bk_title"
              <*> v .: "bk_note"
-             -- <*> (convert <$> v .: "list")
-             -- <*> v .:? "list_name" .!= "none"
              <*> (dateFromString <$> v .: "bk_date")
   parseJSON _ = mzero
 
@@ -189,15 +180,12 @@ ppBMGroup :: Group -> Text
 ppBMGroup (Group _ n) = n
 
 type SearchString = String
-type SearchInt    = Int
 type SearchDay    = Day
 
 -- | SearchKey encodes "what to search for" and "where to search for it."
 data SearchKey    = BID SearchString       -- ^ Search by ID.
                   | Url SearchString       -- ^ Search by URL.
                   | Title SearchString     -- ^ Search by Title.
-              --    | GroupID SearchInt      -- ^ Search by Group ID.
-              --    | GroupName SearchString -- ^ Search by Group Name.
                   | Note SearchString      -- ^ Search by note.
                   | Creation SearchDay     -- ^ Search by Creation date.
                   deriving (Show)
@@ -210,8 +198,6 @@ extractSearchKey (Specific format) q
   | "url" `L.isInfixOf` format       = Url q
   | "title" `L.isInfixOf` format     = Title q
   | "note" `L.isInfixOf` format      = Note q
---  | "listid" `L.isInfixOf` format    = GroupID $ convert q
---  | "listname" `L.isInfixOf` format  = GroupName q
   | "creation" `L.isInfixOf` format  = Creation $ convert q
   | otherwise                        = extractSearchKey Default q
 
