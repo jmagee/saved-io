@@ -30,7 +30,7 @@ retrieveBookmarksQ :: Token
                    -> Optional Int
                    -> String
 retrieveBookmarksQ token group from to limit =
-  "bookmarks/" +?+ group ++ foldl (>&&<) "&"
+  "bookmarks?" +?+ group ++ foldl (>&&<) "&"
                                          [ tokenStr token
                                          , fromStr from
                                          , toStr to
@@ -94,4 +94,4 @@ formatParam s (Specific x) = s ++ x
 -- | Format a token into a URL parameter.
 tokenStr :: Token -> String
 tokenStr t = formatParam "devkey=" (Specific devKey)
-           ++ formatParam "key=" (Specific t)
+           >&&< formatParam "key=" (Specific t)

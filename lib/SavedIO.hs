@@ -83,22 +83,24 @@ module SavedIO (
 , extractSearchKey
 ) where
 
-import            SavedIO.Internal
-import            SavedIO.Types
-import            SavedIO.Util
+import           SavedIO.Internal
+import           SavedIO.Types
+import           SavedIO.Util
 
-import            Data.Aeson                      (eitherDecode)
-import qualified  Data.ByteString.Lazy    as      B
-import qualified  Data.ByteString.Lazy.Char8 as   BP
-import qualified  Data.List               as      L
-import            Data.Optional                   (Optional(..))
-import            Data.Text               hiding  (foldr, foldl, group)
-import            Data.Time                       (Day)
-import            Network.HTTP.Conduit            (simpleHttp, newManager,
-                                                   parseUrl, httpLbs, method,
-                                                   requestBody, RequestBody(..),
-                                                   responseBody, requestHeaders)
-import            Network.HTTP.Client             (defaultManagerSettings)
+import           Debug.Trace                (trace)
+
+import           Data.Aeson                 (eitherDecode)
+import qualified Data.ByteString.Lazy       as B
+import qualified Data.ByteString.Lazy.Char8 as BP
+import qualified Data.List                  as L
+import           Data.Optional              (Optional (..))
+import           Data.Text                  hiding (foldl, foldr, group)
+import           Data.Time                  (Day)
+import           Network.HTTP.Client        (defaultManagerSettings)
+import           Network.HTTP.Conduit       (RequestBody (..), httpLbs, method,
+                                             newManager, parseUrl, requestBody,
+                                             requestHeaders, responseBody,
+                                             simpleHttp)
 
 -- | Base URL for saved io API.
 savedIOURL :: String
@@ -130,6 +132,7 @@ retrieveBookmarks :: Token            -- ^ API Token
                   -> Optional Int     -- ^ Limit
                   -> IO (Either String [Bookmark])
 retrieveBookmarks token group from to limit = do
+  trace (retrieveBookmarksQ token group from to limit) $ pure ()
   let stream = savedIO $ retrieveBookmarksQ token group from to limit
   d <- (eitherDecode <$> stream) :: IO (Either String [Bookmark])
   case d of
@@ -159,11 +162,14 @@ searchBookmarks (Url x) marks
 searchBookmarks (Title x) marks
   = L.filter (\y -> pack x `isInfixOf` _title y) marks
 
-searchBookmarks (GroupID x) marks
-  = L.filter (\y -> x == _list y) marks
+searchBookmarks (Note x) marks
+  = L.filter (\y -> pack x `isInfixOf` _note y) marks
 
-searchBookmarks (GroupName x) marks
-  = L.filter (\y -> pack x `isInfixOf` _listName y) marks
+--searchBookmarks (GroupID x) marks
+--  = L.filter (\y -> x == _list y) marks
+
+--searchBookmarks (GroupName x) marks
+--  = L.filter (\y -> pack x `isInfixOf` _listName y) marks
 
 searchBookmarks (Creation x) marks
   = L.filter (\y -> x == _creation y) marks

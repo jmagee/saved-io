@@ -51,8 +51,7 @@ type BMGroup        = String
 --   * bid
 --   * url
 --   * title
---   * listid
---   * listname
+--   * note
 --   * creation
 type BMFormat       = String
 
@@ -66,26 +65,33 @@ type BMUrl          = String
 type BMTitle        = String
 
 -- | Bookmark ID. (saved.io's internal identiciation numbers.)
-type BMId           = Int
+type BMId           = String
 
 -- | saved.io Bookmark.
 data Bookmark =
+  {-Bookmark { _id       :: BMId-}
+           {-, _url      :: Text-}
+           {-, _title    :: Text-}
+           {-, _list     :: Int-}
+           {-, _listName :: Text-}
+           {-, _creation :: Day-}
+           {-} deriving (Show)-}
   Bookmark { _id       :: BMId
            , _url      :: Text
            , _title    :: Text
-           , _list     :: Int
-           , _listName :: Text
+           , _note     :: Text
            , _creation :: Day
            } deriving (Show)
 
 instance FromJSON Bookmark where
   parseJSON (Object v) =
     Bookmark <$> (convert <$> v .: "bk_id")
-             <*> v .: "url"
-             <*> v .: "title"
-             <*> (convert <$> v .: "list")
-             <*> v .:? "list_name" .!= "none"
-             <*> (dateFromString <$> v .: "creation_date")
+             <*> v .: "bk_url"
+             <*> v .: "bk_title"
+             <*> v .: "bk_note"
+             -- <*> (convert <$> v .: "list")
+             -- <*> v .:? "list_name" .!= "none"
+             <*> (dateFromString <$> v .: "bk_date")
   parseJSON _ = mzero
 
 -- | Color scheme pair to match a key to a color.
@@ -103,14 +109,13 @@ defBookColors =
   [ ("id", CS.Cyan)
   , ("title", CS.Green)
   , ("url", CS.Blue)
-  , ("groupid", CS.Yellow)
-  , ("groupname", CS.Yellow)
+  , ("note", CS.Yellow)
   , ("creation", CS.Red)
   ]
 
 -- | Default bookmark key string
 defBookKeys :: Text
-defBookKeys = "title,url,groupname"
+defBookKeys = "title,url"
 
 -- | Default bookmark config
 defBookmarkConfig :: BookmarkConfig
@@ -121,7 +126,7 @@ ppBookmark :: BookmarkConfig  -- ^ Pretty printer configuration for bookmarks
            -> Bookmark        -- ^ The bookmark to print
            -> Text            -- ^ The formatted result.-}
 ppBookmark (BookmarkConfig k scheme)
-           (Bookmark theID theURL theTitle theList theListName theCreation)
+           (Bookmark theID theURL theTitle theNote theCreation)
   = T.concat . newlineate $ prettyField <$> T.splitOn "," k
     where
       newlineate    = fmap $ flip T.append "\n"
@@ -130,8 +135,7 @@ ppBookmark (BookmarkConfig k scheme)
         "id"        -> T.append "ID: "       $ colorize' "id" $ tshow theID
         "title"     -> T.append "Bookmark: " $ colorize' "title" theTitle
         "url"       -> T.append "URL: "      $ colorize' "url" theURL
-        "groupid"   -> T.append "Group ID: " $ colorize' "groupid" $ tshow theList
-        "groupname" -> T.append "Group: "    $ colorize' "groupname" theListName
+        "note"      -> T.append "Note: "     $ colorize' "note" theNote
         "creation"  -> T.append "Created: "  $ colorize' "creation" $ tshow theCreation
         e@_         -> T.append "unrecognized format " e
 
@@ -189,11 +193,12 @@ type SearchInt    = Int
 type SearchDay    = Day
 
 -- | SearchKey encodes "what to search for" and "where to search for it."
-data SearchKey    = BID SearchInt          -- ^ Search by ID.
+data SearchKey    = BID SearchString       -- ^ Search by ID.
                   | Url SearchString       -- ^ Search by URL.
                   | Title SearchString     -- ^ Search by Title.
-                  | GroupID SearchInt      -- ^ Search by Group ID.
-                  | GroupName SearchString -- ^ Search by Group Name.
+              --    | GroupID SearchInt      -- ^ Search by Group ID.
+              --    | GroupName SearchString -- ^ Search by Group Name.
+                  | Note SearchString      -- ^ Search by note.
                   | Creation SearchDay     -- ^ Search by Creation date.
                   deriving (Show)
 
@@ -201,11 +206,12 @@ data SearchKey    = BID SearchInt          -- ^ Search by ID.
 extractSearchKey:: Optional BMFormat -> Query -> SearchKey
 extractSearchKey Default q = Title q
 extractSearchKey (Specific format) q
-  | "bid" `L.isInfixOf` format       = BID $ convert q
+  | "bid" `L.isInfixOf` format       = BID q
   | "url" `L.isInfixOf` format       = Url q
   | "title" `L.isInfixOf` format     = Title q
-  | "listid" `L.isInfixOf` format    = GroupID $ convert q
-  | "listname" `L.isInfixOf` format  = GroupName q
+  | "note" `L.isInfixOf` format      = Note q
+--  | "listid" `L.isInfixOf` format    = GroupID $ convert q
+--  | "listname" `L.isInfixOf` format  = GroupName q
   | "creation" `L.isInfixOf` format  = Creation $ convert q
   | otherwise                        = extractSearchKey Default q
 
