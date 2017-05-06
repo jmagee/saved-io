@@ -127,12 +127,11 @@ savedIOPOST url body = do
 -- | Retrieve a list of bookmarks.
 retrieveBookmarks :: Token            -- ^ API Token
                   -> Optional BMGroup -- ^ Bokmark Group
-                  -> Optional Int     -- ^ Page (not clear what this does)
                   -> Optional Int     -- ^ Limit
                   -> IO (Either String [Bookmark])
-retrieveBookmarks token group page limit = do
-  trace (retrieveBookmarksQ token group page limit) $ pure ()
-  let stream = savedIO $ retrieveBookmarksQ token group page limit
+retrieveBookmarks token group limit = do
+  trace (retrieveBookmarksQ token group limit) $ pure ()
+  let stream = savedIO $ retrieveBookmarksQ token group limit
   d <- (eitherDecode <$> stream) :: IO (Either String [Bookmark])
   case d of
     Left err    -> fmap Left (handleDecodeError stream err)

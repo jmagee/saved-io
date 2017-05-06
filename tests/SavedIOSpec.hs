@@ -54,14 +54,13 @@ spec = do
     it "produces a correctly formatted query" $
       retrieveBookmarksQ "cafebabe"
                          (Specific "aardvark")
-                         (Specific 1)
                          (Specific 10)
-        `shouldBe` "bookmarks?&&devkey=9n7OFeRlp0OfsXycY0IMgX8k79D60vnu&key=cafebabe&page=1&limit=10&list=aardvark"
+        `shouldBe` "bookmarks?&&devkey=9n7OFeRlp0OfsXycY0IMgX8k79D60vnu&key=cafebabe&limit=10&list=aardvark"
     it "handles optional arguments" $
-      retrieveBookmarksQ "deadcafe" Default Default Default
+      retrieveBookmarksQ "deadcafe" Default Default
         `shouldBe` "bookmarks?&&devkey=9n7OFeRlp0OfsXycY0IMgX8k79D60vnu&key=deadcafe"
     it "handles a mix of optional arguments" $
-      retrieveBookmarksQ "deadcafe" (Specific "foo") Default (Specific 1984)
+      retrieveBookmarksQ "deadcafe" (Specific "foo") (Specific 1984)
         `shouldBe` "bookmarks?&&devkey=9n7OFeRlp0OfsXycY0IMgX8k79D60vnu&key=deadcafe&limit=1984&list=foo"
 
   describe "retrieveGroupsQ" $

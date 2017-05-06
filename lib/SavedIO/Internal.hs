@@ -26,19 +26,22 @@ devKey = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 retrieveBookmarksQ :: Token
                    -> Optional BMGroup
                    -> Optional Int
-                   -> Optional Int
                    -> String
-retrieveBookmarksQ token group page limit =
+retrieveBookmarksQ token group limit =
   "bookmarks?" ++ foldl (>&&<) "&"
                                [ tokenStr token
-                               , pageStr page
+                               , pageStr Default -- See NB1.
                                , limitStr limit
                                , groupStr group
                                ]
     where
-      pageStr  = formatParam "page=" . (show <$>)
       limitStr = formatParam "limit=" . (show <$>)
       groupStr = formatParam "list=" . (id <$>)
+      -- NB1: We may consider exposing the page option in our API
+      -- later, but for now we just fall back to the upstream default (1).
+      -- My testing could not find any noticeable effect of this option.
+      pageStr :: Optional Int -> String
+      pageStr  = formatParam "page=" . (show <$>)
 
 -- | Prepare the query string for retrieveGroups
 retrieveGroupsQ :: Token -> String
