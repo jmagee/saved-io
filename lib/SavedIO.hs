@@ -189,7 +189,6 @@ deleteBookmark token bkid =
   deleteAction $ deleteBookmarkQ token bkid
 
 -- | Perform a url POST action, and check for API failure.
--- FIXME: Should we return the bm_id instead of Bool?
 postAction :: String -> IO (Either String BMId)
 postAction qString =
   boolify <$> ((eitherDecode <$> stream) :: IO (Either String Bookmark))
