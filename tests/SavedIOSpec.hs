@@ -55,13 +55,13 @@ spec = do
       retrieveBookmarksQ "cafebabe"
                          (Specific "aardvark")
                          (Specific 10)
-        `shouldBe` "bookmarks?&&devkey=9n7OFeRlp0OfsXycY0IMgX8k79D60vnu&key=cafebabe&limit=10&list=aardvark"
+        `shouldBe` "?&&devkey=9n7OFeRlp0OfsXycY0IMgX8k79D60vnu&key=cafebabe&limit=10&list=aardvark"
     it "handles optional arguments" $
       retrieveBookmarksQ "deadcafe" Default Default
-        `shouldBe` "bookmarks?&&devkey=9n7OFeRlp0OfsXycY0IMgX8k79D60vnu&key=deadcafe"
+        `shouldBe` "?&&devkey=9n7OFeRlp0OfsXycY0IMgX8k79D60vnu&key=deadcafe"
     it "handles a mix of optional arguments" $
       retrieveBookmarksQ "deadcafe" (Specific "foo") (Specific 1984)
-        `shouldBe` "bookmarks?&&devkey=9n7OFeRlp0OfsXycY0IMgX8k79D60vnu&key=deadcafe&limit=1984&list=foo"
+        `shouldBe` "?&&devkey=9n7OFeRlp0OfsXycY0IMgX8k79D60vnu&key=deadcafe&limit=1984&list=foo"
 
   describe "retrieveGroupsQ" $
     it "puts the lotion on its skin or else it gets the hose again" $
