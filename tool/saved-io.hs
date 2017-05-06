@@ -67,6 +67,9 @@ run (CL.Options c@(Common t format color start end limit sort sortMethod) cmd) =
     DelMark bkid              ->
       deleteBookmark (token t) bkid >>= \_ -> pure ()
 
+    GetMark bkid              ->
+      getBookmark (token t) bkid >>= executeIf (T.putStrLn . ppMarkDef)
+
     MakeRC                    -> do
       home <- getHomeDirectory
       putStrLn $ "#Redirect the contents below to " ++ home ++ "/.saved-io.rc"

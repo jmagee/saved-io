@@ -54,6 +54,7 @@
 module SavedIO (
   -- * saved.io API
   retrieveBookmarks
+, getBookmark
 , searchBookmarks
 , createBookmark
 , deleteBookmark
@@ -133,6 +134,17 @@ retrieveBookmarks token group limit = do
   trace (retrieveBookmarksQ token group limit) $ pure ()
   let stream = savedIO $ retrieveBookmarksQ token group limit
   d <- (eitherDecode <$> stream) :: IO (Either String [Bookmark])
+  case d of
+    Left err    -> fmap Left (handleDecodeError stream err)
+    Right marks -> pure $ Right marks
+
+-- | Retrieve a single bookmark based on the bookmark id.
+getBookmark :: Token -- ^ API Token
+            -> BMId  -- ^ Bookmark id
+            -> IO (Either String Bookmark)
+getBookmark token id = do
+  let stream = savedIO $ getBookmarkQ token id
+  d <- (eitherDecode <$> stream) :: IO (Either String Bookmark)
   case d of
     Left err    -> fmap Left (handleDecodeError stream err)
     Right marks -> pure $ Right marks

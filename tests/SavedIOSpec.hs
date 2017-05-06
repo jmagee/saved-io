@@ -55,6 +55,11 @@ spec = do
       retrieveBookmarksQ "deadcafe" (Specific "foo") (Specific 1984)
         `shouldBe` "?&&devkey=9n7OFeRlp0OfsXycY0IMgX8k79D60vnu&key=deadcafe&limit=1984&list=foo"
 
+  describe "getBookmarkQ" $
+    it "produces a correctly formatted query" $
+      getBookmarkQ "babebabe" "XyyZ"
+        `shouldBe` "/XyyZ?devkey=9n7OFeRlp0OfsXycY0IMgX8k79D60vnu&key=babebabe"
+
   describe "createBookmarkQ" $ do
     it "produces a correctly formatted query" $
       createBookmarkQ "toktok" "Everything" "http://haskell.org" Default

@@ -43,6 +43,7 @@ data Command = Listing (Optional BMGroup)
              | Search Query (Optional BMFormat)
              | AddMark BMTitle BMUrl (Optional BMGroup)
              | DelMark BMId
+             | GetMark BMId
              | MakeRC
              deriving (Show)
 
@@ -209,6 +210,10 @@ parseAddMark = AddMark
 parseDelMark :: Parser Command
 parseDelMark = DelMark <$> argument str (metavar "BMID" <> help "Bookmark ID")
 
+-- | Parse the get bookmark command.
+parseGetMark :: Parser Command
+parseGetMark = GetMark <$> argument str (metavar "BMID" <> help "Bookmark id")
+
 -- | Parse the MakeRC command
 parseMakeRC :: Parser Command
 parseMakeRC = pure MakeRC
@@ -220,6 +225,7 @@ parseCommand = subparser
   <> command "search"     (parseSearch `withInfo` "Search for bookmark")
   <> command "addmark"    (parseAddMark `withInfo` "Add bookmark")
   <> command "delmark"    (parseDelMark `withInfo` "Delete bookmark")
+  <> command "getmark"    (parseGetMark `withInfo` "Get bookmark")
   <> command "mkrc"       (parseMakeRC `withInfo` "Make RC File")
 
 -- | Display help for a parser.

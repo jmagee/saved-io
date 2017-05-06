@@ -2,6 +2,7 @@
 
 module SavedIO.Internal
 ( retrieveBookmarksQ
+, getBookmarkQ
 , createBookmarkQ
 , deleteBookmarkQ
 , (>&&<)
@@ -41,6 +42,9 @@ retrieveBookmarksQ token group limit =
       -- My testing could not find any noticeable effect of this option.
       pageStr :: Optional Int -> String
       pageStr  = formatParam "page=" . (show <$>)
+
+getBookmarkQ :: Token -> BMId -> String
+getBookmarkQ token id = "/" ++ id ++ "?" ++ tokenStr token
 
 -- | Prepare the query string for createBookmark
 createBookmarkQ :: Token
