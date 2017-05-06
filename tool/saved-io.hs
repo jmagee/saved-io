@@ -67,7 +67,7 @@ run (CL.Options c@(Common t format color start end limit sort sortMethod) cmd) =
       createBookmark (token t) title url group >>= executeIf (\_ -> putStrLn "Success!")
 
     DelMark bkid              ->
-      deleteBookmark (token t) bkid >>= executeIf (\_ -> pure ())
+      deleteBookmark (token t) bkid >>= \_ -> pure ()
 
     MakeRC                    -> do
       home <- getHomeDirectory

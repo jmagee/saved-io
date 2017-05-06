@@ -101,6 +101,8 @@ import           Network.HTTP.Conduit       (RequestBody (..), httpLbs, method,
                                              newManager, parseUrl, requestBody,
                                              requestHeaders, responseBody,
                                              simpleHttp)
+import           Network.HTTP.Types.Method  (Method, methodDelete,
+                                             methodPost)
 
 -- | Base URL for saved io API.
 savedIOURL :: String
@@ -111,11 +113,11 @@ savedIO :: String -> IO B.ByteString
 savedIO = simpleHttp . (++) savedIOURL
 
 -- | Send a POST request to saved.io.
-savedIOPOST :: String -> String -> IO B.ByteString
-savedIOPOST url body = do
+savedIOHTTP :: Method -> String -> String -> IO B.ByteString
+savedIOHTTP htype url body = do
   manager <- newManager defaultManagerSettings
   initReq <- parseUrl $ savedIOURL ++ url
-  let req = initReq { method = "POST"
+  let req = initReq { method = htype
                     , requestHeaders = [("Content-Type"
                                        , "application/x-www-form-urlencoded")
                                        ]
@@ -189,10 +191,11 @@ deleteBookmark :: Token   -- ^ API token
                -- | Either API error message or Success flag
                -- Note that this call returns succes even if it
                -- did not actually delete anything.
-               -> IO (Either String Bool)
+               -> IO String
 deleteBookmark token bkid =
-  postAction urlSuffix $ deleteBookmarkQ token bkid
-    where urlSuffix = "delete"
+  trace (deleteBookmarkQ token bkid) $
+  deleteAction urlSuffix $ deleteBookmarkQ token bkid
+    where urlSuffix = "bookmarks"
 
 -- | Perform a url POST action, and check for API failure.
 -- FIXME: Should we return the bm_id instead of Bool?
@@ -200,10 +203,15 @@ postAction :: String -> String -> IO (Either String Bool)
 postAction urlSuffix qString =
   boolify <$> ((eitherDecode <$> stream) :: IO (Either String Bookmark))
     where
-      stream = savedIOPOST urlSuffix qString
+      stream = savedIOHTTP methodPost urlSuffix qString
       boolify :: Either String Bookmark -> Either String Bool
       boolify (Left x)  = Left x
       boolify (Right _) = Right True
+
+-- | Perform a url DELETE action, and check for API failure.
+-- FIXME: Should we return the bm_id instead of Bool?
+deleteAction :: String -> String -> IO String
+deleteAction a b = BP.unpack <$> savedIOHTTP methodDelete a b
 
 -- | Redecode the stream as an SavedIOResponse to see if there was an API error.
 -- This will either return the API error, if it can be obtained, or

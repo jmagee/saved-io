@@ -212,7 +212,7 @@ parseAddMark = AddMark
 
 -- | Parse the delete bookmark command.
 parseDelMark :: Parser Command
-parseDelMark = DelMark <$> argument auto (metavar "BMID" <> help "Bookmark ID")
+parseDelMark = DelMark <$> argument str (metavar "BMID" <> help "Bookmark ID")
 
 -- | Parse the MakeRC command
 parseMakeRC :: Parser Command

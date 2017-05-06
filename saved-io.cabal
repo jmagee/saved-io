@@ -59,6 +59,7 @@ library
                        optional-args,
                        http-client,
                        http-conduit,
+                       http-types,
                        text,
                        time
   other-extensions:    OverloadedStrings
@@ -84,6 +85,7 @@ executable saved-io
                        aeson-pretty,
                        directory,
                        http-conduit,
+                       http-types,
                        optional-args,
                        optparse-applicative,
                        SavedIO,

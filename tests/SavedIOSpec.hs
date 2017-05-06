@@ -77,7 +77,7 @@ spec = do
 
   describe "deleteBookmarkQ" $
     it "produces a correctly formatted query" $
-      deleteBookmarkQ "took" "123456789" `shouldBe` "token=took&bk_id=123456789"
+      deleteBookmarkQ "took" "123456789" `shouldBe` "devkey=9n7OFeRlp0OfsXycY0IMgX8k79D60vnu&key=took&id=123456789"
 
   describe ">&&<" $ do
     it "the cat smiles"  $ "foo" >&&< "bar" `shouldBe` "foo&bar"

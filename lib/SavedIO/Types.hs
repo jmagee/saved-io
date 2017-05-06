@@ -48,7 +48,7 @@ type BMGroup        = String
 -- | The bookmark format.  This is simply a string that will be matchd
 -- for the keywords:
 --
---   * bid
+--   * id
 --   * url
 --   * title
 --   * note
@@ -78,7 +78,7 @@ data Bookmark =
 
 instance FromJSON Bookmark where
   parseJSON (Object v) =
-    Bookmark <$> (convert <$> v .: "bk_id")
+    Bookmark <$> v .: "bk_id"
              <*> v .: "bk_url"
              <*> v .: "bk_title"
              <*> (fromMaybe "" <$> v .:? "bk_note")
@@ -194,7 +194,7 @@ data SearchKey    = BID SearchString       -- ^ Search by ID.
 extractSearchKey:: Optional BMFormat -> Query -> SearchKey
 extractSearchKey Default q = Title q
 extractSearchKey (Specific format) q
-  | "bid" `L.isInfixOf` format       = BID q
+  | "id" `L.isInfixOf` format       = BID q
   | "url" `L.isInfixOf` format       = Url q
   | "title" `L.isInfixOf` format     = Title q
   | "note" `L.isInfixOf` format      = Note q

@@ -63,8 +63,8 @@ createBookmarkQ token title url group =
 -- | Prepare the query string for deleteBookmark
 deleteBookmarkQ :: Token -> BMId -> String
 deleteBookmarkQ token bkid =
-  formatParam "token=" (Specific token) >&&<
-  formatParam "bk_id=" (Specific bkid)
+  tokenStr token >&&<
+  formatParam "id=" (Specific bkid)
 
 -- | Join URL parameters with an ampersand.
 (>&&<) :: String -> String -> String
