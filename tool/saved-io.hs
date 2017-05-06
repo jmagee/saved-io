@@ -48,11 +48,11 @@ run :: CL.Options -> IO ()
 run (CL.Options c@(Common t format color start end limit sort sortMethod) cmd) =
   case cmd of
     Listing group             ->
-      retrieveBookmarks (token t) group start end limit
+      retrieveBookmarks (token t) group 1 limit
       >>= executeIf (\x -> printTextList $ ppMarkDef <$> sortIf sort sortMethod x)
 
     Search query searchFormat ->
-      retrieveBookmarks (token t) Default start end limit
+      retrieveBookmarks (token t) Default 1 limit
       >>= executeIf (\x -> printTextList $ ppMarkDef <$>
                            sortIf sort
                                   sortMethod

@@ -25,21 +25,20 @@ devKey = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 -- | Prepare the query string for retrieveBookmark
 retrieveBookmarksQ :: Token
                    -> Optional BMGroup
-                   -> Optional Day
-                   -> Optional Day
+                   -> Optional Int
                    -> Optional Int
                    -> String
-retrieveBookmarksQ token group from to limit =
-  "bookmarks?" +?+ group ++ foldl (>&&<) "&"
-                                         [ tokenStr token
-                                         , fromStr from
-                                         , toStr to
-                                         , limitStr limit
-                                         ]
+retrieveBookmarksQ token group page limit =
+  "bookmarks?" ++ foldl (>&&<) "&"
+                               [ tokenStr token
+                               , pageStr page
+                               , limitStr limit
+                               , groupStr group
+                               ]
     where
-      toStr = formatParam "to=" . (epochTime <$>)
-      fromStr = formatParam "from=" . (epochTime <$>)
+      pageStr  = formatParam "page=" . (show <$>)
       limitStr = formatParam "limit=" . (show <$>)
+      groupStr = formatParam "list=" . (id <$>)
 
 -- | Prepare the query string for retrieveGroups
 retrieveGroupsQ :: Token -> String
