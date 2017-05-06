@@ -61,7 +61,8 @@ run (CL.Options c@(Common t format color start end limit sort sortMethod) cmd) =
                                                     x))
 
     AddMark title url group   ->
-      createBookmark (token t) title url group >>= executeIf (\_ -> putStrLn "Success!")
+      createBookmark (token t) title url group
+      >>= executeIf (\x -> putStrLn $ "Success!  Created: " ++ x)
 
     DelMark bkid              ->
       deleteBookmark (token t) bkid >>= \_ -> pure ()

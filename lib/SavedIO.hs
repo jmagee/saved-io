@@ -154,12 +154,6 @@ searchBookmarks (Title x) marks
 searchBookmarks (Note x) marks
   = L.filter (\y -> pack x `isInfixOf` _note y) marks
 
---searchBookmarks (GroupID x) marks
---  = L.filter (\y -> x == _list y) marks
-
---searchBookmarks (GroupName x) marks
---  = L.filter (\y -> pack x `isInfixOf` _listName y) marks
-
 searchBookmarks (Creation x) marks
   = L.filter (\y -> x == _creation y) marks
 
@@ -168,7 +162,7 @@ createBookmark :: Token             -- ^ API Token
                -> BMTitle           -- ^ Bookmark title
                -> BMUrl             -- ^ Bookmark URL
                -> Optional BMGroup  -- ^ Optional Bookmark group
-               -> IO (Either String Bool) -- ^ Either API error message or Success flag
+               -> IO (Either String BMId) -- ^ Either API error message or new BMId
 createBookmark token title url group =
   trace (createBookmarkQ token title url group) $
   postAction $ createBookmarkQ token title url group
@@ -186,17 +180,16 @@ deleteBookmark token bkid =
 
 -- | Perform a url POST action, and check for API failure.
 -- FIXME: Should we return the bm_id instead of Bool?
-postAction :: String -> IO (Either String Bool)
+postAction :: String -> IO (Either String BMId)
 postAction qString =
   boolify <$> ((eitherDecode <$> stream) :: IO (Either String Bookmark))
     where
       stream = savedIOHTTP methodPost qString
-      boolify :: Either String Bookmark -> Either String Bool
+      boolify :: Either String Bookmark -> Either String BMId
       boolify (Left x)  = Left x
-      boolify (Right _) = Right True
+      boolify (Right (Bookmark x _ _ _ _)) = Right x
 
 -- | Perform a url DELETE action, and check for API failure.
--- FIXME: Should we return the bm_id instead of Bool?
 deleteAction :: String -> IO String
 deleteAction b = BP.unpack <$> savedIOHTTP methodDelete b
 
