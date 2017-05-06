@@ -123,7 +123,7 @@ ppBookmark (BookmarkConfig k scheme)
       newlineate    = fmap $ flip T.append "\n"
       colorize'     = colorize scheme
       prettyField s = case s of
-        "id"        -> T.append "ID: "       $ colorize' "id" $ tshow theID
+        "id"        -> T.append "ID: "       $ colorize' "id" $ T.pack theID
         "title"     -> T.append "Bookmark: " $ colorize' "title" theTitle
         "url"       -> T.append "URL: "      $ colorize' "url" theURL
         "note"      -> T.append "Note: "     $ colorize' "note" theNote
