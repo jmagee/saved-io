@@ -41,11 +41,11 @@ getRCDefaults = do
         pure $ defaults d
       defaults (Left _)  = comDef
       defaults (Right x) = x
-      comDef = Common Default Default Default Default
-                      Default Default Default Default
+      comDef = Common Default Default Default
+                      Default Default Default
 
 run :: CL.Options -> IO ()
-run (CL.Options c@(Common t format color start end limit sort sortMethod) cmd) =
+run (CL.Options c@(Common t format color limit sort sortMethod) cmd) =
   case cmd of
     Listing group             ->
       retrieveBookmarks (token t) group limit

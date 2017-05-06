@@ -21,7 +21,6 @@ import qualified  Data.Aeson.Types        as      A
 import            Data.Optional                   (Optional(..))
 import            Data.Semigroup                  ((<>))
 import            Data.Text                       (Text)
-import            Data.Time                       (Day)
 import            Options.Applicative     hiding  (optional)
 
 -- | Color flag.
@@ -57,8 +56,6 @@ data Common = Common
               (Optional Token)
               (Optional BMFormat)
               (Optional Color)
-              (Optional Day)
-              (Optional Day)
               (Optional Limit)
               (Optional Sort)
               (Optional SortMethod)
@@ -69,15 +66,13 @@ instance FromJSON Common where
     Common <$>  v .:¿ "token"
            <*>  v .:¿ "format"
            <*>  v .:¿ "color"
-           <*> pure Default
-           <*> pure Default
            <*> v .:¿ "limit"
            <*> v .:¿ "sort"
            <*> pure Default
   parseJSON _ = mzero
 
 instance ToJSON Common where
-  toJSON (Common token format color _ _ limit sort _) =
+  toJSON (Common token format color limit sort _) =
     object $  "token" `encodeOpt` token
            ++ "format" `encodeOpt` format
            ++ "color" `encodeOpt` color
@@ -113,13 +108,11 @@ optionTrue _                 _                = Specific True
 
 -- | Merge two sets of Common options, where Specific overrides default.
 mergeCommon :: Common -> Common -> Common
-mergeCommon (Common aToken aFormat aColor aDay1 aDay2 aLimit aSort aMethod)
-            (Common bToken bFormat bColor bDay1 bDay2 bLimit bSort bMethod)
+mergeCommon (Common aToken aFormat aColor aLimit aSort aMethod)
+            (Common bToken bFormat bColor bLimit bSort bMethod)
   = Common (pickSpecific aToken bToken)
            (pickSpecific aFormat bFormat)
            (optionTrue aColor bColor)
-           (pickSpecific aDay1 bDay1)
-           (pickSpecific aDay2 bDay2)
            (pickSpecific aLimit bLimit)
            (optionTrue aSort bSort)
            (pickSpecific aMethod bMethod)
@@ -162,14 +155,6 @@ parseCommon = Common
                $  short 'c'
                <> long "color"
                <> help "Use color")
-  <*> optional (option auto
-               $  long "from"
-               <> metavar "START-DATE"
-               <> help "Specify oldest date to consider")
-  <*> optional (option auto
-               $  long "until"
-               <> metavar "END-DATE"
-               <> help "Specify newest date to consider")
   <*> optional (option auto
                $  long "limit"
                <> metavar "N"

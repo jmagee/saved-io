@@ -44,7 +44,7 @@ retrieveBookmarksQ token group limit =
       pageStr  = formatParam "page=" . (show <$>)
 
 getBookmarkQ :: Token -> BMId -> String
-getBookmarkQ token id = "/" ++ id ++ "?" ++ tokenStr token
+getBookmarkQ token bid = "/" ++ bid ++ "?" ++ tokenStr token
 
 -- | Prepare the query string for createBookmark
 createBookmarkQ :: Token

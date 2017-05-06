@@ -84,7 +84,6 @@ module SavedIO (
 
 import           SavedIO.Internal
 import           SavedIO.Types
-import           SavedIO.Util
 
 import           Debug.Trace                (trace)
 
@@ -94,7 +93,6 @@ import qualified Data.ByteString.Lazy.Char8 as BP
 import qualified Data.List                  as L
 import           Data.Optional              (Optional (..))
 import           Data.Text                  hiding (foldl, foldr, group)
-import           Data.Time                  (Day)
 import           Network.HTTP.Client        (defaultManagerSettings)
 import           Network.HTTP.Conduit       (RequestBody (..), httpLbs, method,
                                              newManager, parseUrl, requestBody,
@@ -142,8 +140,8 @@ retrieveBookmarks token group limit = do
 getBookmark :: Token -- ^ API Token
             -> BMId  -- ^ Bookmark id
             -> IO (Either String Bookmark)
-getBookmark token id = do
-  let stream = savedIO $ getBookmarkQ token id
+getBookmark token bid = do
+  let stream = savedIO $ getBookmarkQ token bid
   d <- (eitherDecode <$> stream) :: IO (Either String Bookmark)
   case d of
     Left err    -> fmap Left (handleDecodeError stream err)
