@@ -54,7 +54,7 @@ createBookmarkQ :: Token
                 -> Optional BMGroup
                 -> String
 createBookmarkQ token title url group =
-  foldl (>&&<) (formatParam "token=" $ pure token)
+  foldl (>&&<) (tokenStr token)
                [ formatParam "title=" $ pure title
                , formatParam "url=" $ pure url
                , formatParam "list=" group

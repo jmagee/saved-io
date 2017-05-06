@@ -70,10 +70,10 @@ spec = do
   describe "createBookmarkQ" $ do
     it "produces a correctly formatted query" $
       createBookmarkQ "toktok" "Everything" "http://haskell.org" Default
-        `shouldBe` "token=toktok&title=Everything&url=http://haskell.org"
+        `shouldBe` "devkey=9n7OFeRlp0OfsXycY0IMgX8k79D60vnu&key=toktok&title=Everything&url=http://haskell.org"
     it "produces a correctly formatted query with group" $
       createBookmarkQ "toktok" "Everything" "http://haskell.org" "hask"
-        `shouldBe` "token=toktok&title=Everything&url=http://haskell.org&list=hask"
+        `shouldBe` "devkey=9n7OFeRlp0OfsXycY0IMgX8k79D60vnu&key=toktok&title=Everything&url=http://haskell.org&list=hask"
 
   describe "deleteBookmarkQ" $
     it "produces a correctly formatted query" $

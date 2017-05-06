@@ -179,8 +179,9 @@ createBookmark :: Token             -- ^ API Token
                -> Optional BMGroup  -- ^ Optional Bookmark group
                -> IO (Either String Bool) -- ^ Either API error message or Success flag
 createBookmark token title url group =
+  trace (createBookmarkQ token title url group) $
   postAction urlSuffix $ createBookmarkQ token title url group
-    where urlSuffix = "create"
+    where urlSuffix = "bookmarks"
 
 -- | Delete a bookmark.
 deleteBookmark :: Token   -- ^ API token
@@ -194,14 +195,15 @@ deleteBookmark token bkid =
     where urlSuffix = "delete"
 
 -- | Perform a url POST action, and check for API failure.
+-- FIXME: Should we return the bm_id instead of Bool?
 postAction :: String -> String -> IO (Either String Bool)
-postAction urlSuffix qString = do
-  let stream = savedIOPOST urlSuffix qString
-  d <- (eitherDecode <$> stream) :: IO (Either String SavedIOResponse)
-  case d of
-    Left str                    -> pure $ Left str
-    Right (SavedIOResponse e m) -> e ? pure (Left $ unpack m)
-                                     $ pure (Right True)
+postAction urlSuffix qString =
+  boolify <$> ((eitherDecode <$> stream) :: IO (Either String Bookmark))
+    where
+      stream = savedIOPOST urlSuffix qString
+      boolify :: Either String Bookmark -> Either String Bool
+      boolify (Left x)  = Left x
+      boolify (Right _) = Right True
 
 -- | Redecode the stream as an SavedIOResponse to see if there was an API error.
 -- This will either return the API error, if it can be obtained, or

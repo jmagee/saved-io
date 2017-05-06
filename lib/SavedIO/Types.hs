@@ -28,15 +28,15 @@ module SavedIO.Types (
 , extractSearchKey
 ) where
 
-import            Control.Monad                   (mzero)
-import            Data.Aeson
-import qualified  Data.List               as      L
-import            Data.Optional                   (Optional(..))
-import            Data.Text                       (Text)
-import qualified  Data.Text               as      T
-import            Data.Time                       (Day, defaultTimeLocale,
-                                                   parseTimeOrError)
-import qualified  System.Console.ANSI     as      CS
+import           Control.Monad       (mzero)
+import           Data.Aeson
+import qualified Data.List           as L
+import           Data.Maybe          (fromMaybe)
+import           Data.Optional       (Optional (..))
+import           Data.Text           (Text)
+import qualified Data.Text           as T
+import           Data.Time           (Day, defaultTimeLocale, parseTimeOrError)
+import qualified System.Console.ANSI as CS
 
 -- | The saved.io API Token.  It can be generated here: linkme.
 type Token          = String
@@ -81,8 +81,8 @@ instance FromJSON Bookmark where
     Bookmark <$> (convert <$> v .: "bk_id")
              <*> v .: "bk_url"
              <*> v .: "bk_title"
-             <*> v .: "bk_note"
-             <*> (dateFromString <$> v .: "bk_date")
+             <*> (fromMaybe "" <$> v .:? "bk_note")
+             <*> (dateFromString <$> fromMaybe "" <$> v .:? "bk_date")
   parseJSON _ = mzero
 
 -- | Color scheme pair to match a key to a color.
@@ -144,13 +144,13 @@ colorize (Just scheme) key text =
   where startColor c = T.pack $ CS.setSGRCode [CS.SetColor CS.Foreground CS.Vivid c]
         endColor     = T.pack $ CS.setSGRCode [CS.Reset]
 
--- | A response object from saved.io.  This is returned on error
--- and as a response to POST requests.  The response may have an optional
+-- | A response object from saved.io.  This is returned on errors.
+-- The response may have an optional
 -- data payload as well, but we ignore it.
 --
 -- The ignored data payload is usually either empty or contains a copy
 -- of the content just POSTed.
-data SavedIOResponse=
+data SavedIOResponse =
   SavedIOResponse { isError  :: Bool
                   , message  :: Text
                   } deriving (Show)
