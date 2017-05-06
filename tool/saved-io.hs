@@ -60,9 +60,6 @@ run (CL.Options c@(Common t format color start end limit sort sortMethod) cmd) =
                                                                      query)
                                                     x))
 
-    ShowGroups                ->
-      retrieveGroups (token t) >>= executeIf (\x -> printTextList $ ppBMGroup <$> x)
-
     AddMark title url group   ->
       createBookmark (token t) title url group >>= executeIf (\_ -> putStrLn "Success!")
 

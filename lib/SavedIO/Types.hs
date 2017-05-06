@@ -10,7 +10,6 @@ module SavedIO.Types (
 , Bookmark(..)
 , BookmarkConfig(..)
 , SavedIOResponse(..)
-, Group(..)
 , SearchKey(..)
 , BMTitle
 , BMUrl
@@ -21,7 +20,6 @@ module SavedIO.Types (
 , defBookKeys
 , defBookmarkConfig
 , ppBookmark
-, ppBMGroup
 , ppSavedIOError
 
   -- * Search Utility
@@ -164,20 +162,6 @@ instance FromJSON SavedIOResponse where
 -- | Pretty print a SavedIOResponse.
 ppSavedIOError :: SavedIOResponse -> Text
 ppSavedIOError (SavedIOResponse _ msg) = T.append "Saved.io error: " msg
-
--- | A "group" of bookmarks.
-data Group = Group Int Text
-             deriving (Show)
-
-instance FromJSON Group where
-  parseJSON (Object v)  =
-    Group <$> (convert <$> v .: "id")
-          <*> v .: "name"
-  parseJSON _ = mzero
-
--- | Pretty print a bookmark group
-ppBMGroup :: Group -> Text
-ppBMGroup (Group _ n) = n
 
 type SearchString = String
 type SearchDay    = Day

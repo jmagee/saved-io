@@ -25,14 +25,6 @@ spec = do
     it "prints empty with prefix" $
       ppSavedIOError (SavedIOResponse False "") `shouldBe` pack "Saved.io error: "
 
-  describe "ppBMGroup" $ do
-    it "prints a group" $
-      ppBMGroup (Group 1 "Stuff") `shouldBe` pack "Stuff"
-    it "prints a group again" $
-      ppBMGroup (Group 7 "Stuff") `shouldBe` pack "Stuff"
-    it "prints some other group" $
-      ppBMGroup (Group 3 "abZert14") `shouldBe` pack "abZert14"
-
   describe "defBookColors" $
     it "is full of pretty colors" $
       defBookColors `shouldBe` [ ("id", CS.Cyan)
@@ -62,10 +54,6 @@ spec = do
     it "handles a mix of optional arguments" $
       retrieveBookmarksQ "deadcafe" (Specific "foo") (Specific 1984)
         `shouldBe` "?&&devkey=9n7OFeRlp0OfsXycY0IMgX8k79D60vnu&key=deadcafe&limit=1984&list=foo"
-
-  describe "retrieveGroupsQ" $
-    it "puts the lotion on its skin or else it gets the hose again" $
-      retrieveGroupsQ "cafecafe" `shouldBe` "lists&devkey=9n7OFeRlp0OfsXycY0IMgX8k79D60vnu&key=cafecafe"
 
   describe "createBookmarkQ" $ do
     it "produces a correctly formatted query" $

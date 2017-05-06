@@ -54,7 +54,6 @@
 module SavedIO (
   -- * saved.io API
   retrieveBookmarks
-, retrieveGroups
 , searchBookmarks
 , createBookmark
 , deleteBookmark
@@ -77,7 +76,6 @@ module SavedIO (
 , defBookKeys
 , defBookmarkConfig
 , ppBookmark
-, ppBMGroup
 
   -- * Utilities
 , extractSearchKey
@@ -138,15 +136,6 @@ retrieveBookmarks token group limit = do
   case d of
     Left err    -> fmap Left (handleDecodeError stream err)
     Right marks -> pure $ Right marks
-
--- | Retrieve the list of bookmark groups.
-retrieveGroups :: Token -> IO (Either String [Group])
-retrieveGroups token = do
-  let stream = savedIO $ retrieveGroupsQ token
-  d <- (eitherDecode <$> stream) :: IO (Either String [Group])
-  case d of
-    Left err    -> fmap Left (handleDecodeError stream err)
-    Right l     -> pure $ Right l
 
 -- | Search bookmarks.
 --

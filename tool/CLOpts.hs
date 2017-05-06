@@ -41,7 +41,6 @@ data Direction = Ascending
 -- | Sub-command line argument.
 data Command = Listing (Optional BMGroup)
              | Search Query (Optional BMFormat)
-             | ShowGroups
              | AddMark BMTitle BMUrl (Optional BMGroup)
              | DelMark BMId
              | MakeRC
@@ -193,10 +192,6 @@ parseSearch = Search
                           <> metavar "SEARCH-TYPE"
                           <> help "bid,url,groupid,groupname,creation")
 
--- | Parse the show groups command.
-parseShowGroups :: Parser Command
-parseShowGroups = pure ShowGroups
-
 -- |  Parse the add bookmark command.
 parseAddMark :: Parser Command
 parseAddMark = AddMark
@@ -223,7 +218,6 @@ parseCommand :: Parser Command
 parseCommand = subparser
   $  command "list"       (parseListing `withInfo` "List bookmark groups")
   <> command "search"     (parseSearch `withInfo` "Search for bookmark")
-  <> command "groups"     (parseShowGroups `withInfo` "Show groups")
   <> command "addmark"    (parseAddMark `withInfo` "Add bookmark")
   <> command "delmark"    (parseDelMark `withInfo` "Delete bookmark")
   <> command "mkrc"       (parseMakeRC `withInfo` "Make RC File")
