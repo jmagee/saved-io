@@ -85,8 +85,6 @@ module SavedIO (
 import           SavedIO.Internal
 import           SavedIO.Types
 
-import           Debug.Trace                (trace)
-
 import           Data.Aeson                 (eitherDecode)
 import qualified Data.ByteString.Lazy       as B
 import qualified Data.ByteString.Lazy.Char8 as BP
@@ -129,7 +127,6 @@ retrieveBookmarks :: Token            -- ^ API Token
                   -> Optional Int     -- ^ Limit
                   -> IO (Either String [Bookmark])
 retrieveBookmarks token group limit = do
-  trace (retrieveBookmarksQ token group limit) $ pure ()
   let stream = savedIO $ retrieveBookmarksQ token group limit
   d <- (eitherDecode <$> stream) :: IO (Either String [Bookmark])
   case d of
@@ -174,7 +171,6 @@ createBookmark :: Token             -- ^ API Token
                -> Optional BMGroup  -- ^ Optional Bookmark group
                -> IO (Either String BMId) -- ^ Either API error message or new BMId
 createBookmark token title url group =
-  trace (createBookmarkQ token title url group) $
   postAction $ createBookmarkQ token title url group
 
 -- | Delete a bookmark.
@@ -185,7 +181,6 @@ deleteBookmark :: Token   -- ^ API token
                -- did not actually delete anything.
                -> IO String
 deleteBookmark token bkid =
-  trace (deleteBookmarkQ token bkid) $
   deleteAction $ deleteBookmarkQ token bkid
 
 -- | Perform a url POST action, and check for API failure.
