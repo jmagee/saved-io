@@ -28,12 +28,12 @@ retrieveBookmarksQ :: Token
                    -> Optional Int
                    -> String
 retrieveBookmarksQ token group limit =
-  "bookmarks?" ++ foldl (>&&<) "&"
-                               [ tokenStr token
-                               , pageStr Default -- See NB1.
-                               , limitStr limit
-                               , groupStr group
-                               ]
+  "?" ++ foldl (>&&<) "&"
+                      [ tokenStr token
+                      , pageStr Default -- See NB1.
+                      , limitStr limit
+                      , groupStr group
+                      ]
     where
       limitStr = formatParam "limit=" . (show <$>)
       groupStr = formatParam "list=" . (id <$>)

@@ -106,17 +106,17 @@ import           Network.HTTP.Types.Method  (Method, methodDelete,
 
 -- | Base URL for saved io API.
 savedIOURL :: String
-savedIOURL = "http://devapi.saved.io/"
+savedIOURL = "http://devapi.saved.io/bookmarks"
 
 -- | Fetch a URL from saved.io.
 savedIO :: String -> IO B.ByteString
 savedIO = simpleHttp . (++) savedIOURL
 
 -- | Send a POST request to saved.io.
-savedIOHTTP :: Method -> String -> String -> IO B.ByteString
-savedIOHTTP htype url body = do
+savedIOHTTP :: Method -> String -> IO B.ByteString
+savedIOHTTP htype body = do
   manager <- newManager defaultManagerSettings
-  initReq <- parseUrl $ savedIOURL ++ url
+  initReq <- parseUrl savedIOURL
   let req = initReq { method = htype
                     , requestHeaders = [("Content-Type"
                                        , "application/x-www-form-urlencoded")
@@ -182,8 +182,7 @@ createBookmark :: Token             -- ^ API Token
                -> IO (Either String Bool) -- ^ Either API error message or Success flag
 createBookmark token title url group =
   trace (createBookmarkQ token title url group) $
-  postAction urlSuffix $ createBookmarkQ token title url group
-    where urlSuffix = "bookmarks"
+  postAction $ createBookmarkQ token title url group
 
 -- | Delete a bookmark.
 deleteBookmark :: Token   -- ^ API token
@@ -194,24 +193,23 @@ deleteBookmark :: Token   -- ^ API token
                -> IO String
 deleteBookmark token bkid =
   trace (deleteBookmarkQ token bkid) $
-  deleteAction urlSuffix $ deleteBookmarkQ token bkid
-    where urlSuffix = "bookmarks"
+  deleteAction $ deleteBookmarkQ token bkid
 
 -- | Perform a url POST action, and check for API failure.
 -- FIXME: Should we return the bm_id instead of Bool?
-postAction :: String -> String -> IO (Either String Bool)
-postAction urlSuffix qString =
+postAction :: String -> IO (Either String Bool)
+postAction qString =
   boolify <$> ((eitherDecode <$> stream) :: IO (Either String Bookmark))
     where
-      stream = savedIOHTTP methodPost urlSuffix qString
+      stream = savedIOHTTP methodPost qString
       boolify :: Either String Bookmark -> Either String Bool
       boolify (Left x)  = Left x
       boolify (Right _) = Right True
 
 -- | Perform a url DELETE action, and check for API failure.
 -- FIXME: Should we return the bm_id instead of Bool?
-deleteAction :: String -> String -> IO String
-deleteAction a b = BP.unpack <$> savedIOHTTP methodDelete a b
+deleteAction :: String -> IO String
+deleteAction b = BP.unpack <$> savedIOHTTP methodDelete b
 
 -- | Redecode the stream as an SavedIOResponse to see if there was an API error.
 -- This will either return the API error, if it can be obtained, or
