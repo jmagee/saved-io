@@ -38,14 +38,13 @@ spec = do
       defBookColors `shouldBe` [ ("id", CS.Cyan)
                                , ("title", CS.Green)
                                , ("url", CS.Blue)
-                               , ("groupid", CS.Yellow)
-                               , ("groupname", CS.Yellow)
+                               , ("note", CS.Yellow)
                                , ("creation", CS.Red)
                                ]
 
   describe "defBookKeys" $
     it "has the expected keys" $
-      defBookKeys `shouldBe` "title,url,groupname"
+      defBookKeys `shouldBe` "title,url"
 
   describe "defBookmarkConfig" $
     it "is expected" $
@@ -55,20 +54,19 @@ spec = do
     it "produces a correctly formatted query" $
       retrieveBookmarksQ "cafebabe"
                          (Specific "aardvark")
-                         (Specific (fromGregorian 2015 02 19))
-                         (Specific (fromGregorian 2016 02 19))
+                         (Specific 1)
                          (Specific 10)
-        `shouldBe` "bookmarks/aardvark&&token=cafebabe&from=1424304000&to=1455840000&limit=10"
+        `shouldBe` "bookmarks?&&devkey=9n7OFeRlp0OfsXycY0IMgX8k79D60vnu&key=cafebabe&page=1&limit=10&list=aardvark"
     it "handles optional arguments" $
-      retrieveBookmarksQ "deadcafe" Default Default Default Default
-        `shouldBe` "bookmarks/&&token=deadcafe"
+      retrieveBookmarksQ "deadcafe" Default Default Default
+        `shouldBe` "bookmarks?&&devkey=9n7OFeRlp0OfsXycY0IMgX8k79D60vnu&key=deadcafe"
     it "handles a mix of optional arguments" $
-      retrieveBookmarksQ "deadcafe" (Specific "foo") Default Default (Specific 1984)
-        `shouldBe` "bookmarks/foo&&token=deadcafe&limit=1984"
+      retrieveBookmarksQ "deadcafe" (Specific "foo") Default (Specific 1984)
+        `shouldBe` "bookmarks?&&devkey=9n7OFeRlp0OfsXycY0IMgX8k79D60vnu&key=deadcafe&limit=1984&list=foo"
 
   describe "retrieveGroupsQ" $
     it "puts the lotion on its skin or else it gets the hose again" $
-      retrieveGroupsQ "cafecafe" `shouldBe` "lists&token=cafecafe"
+      retrieveGroupsQ "cafecafe" `shouldBe` "lists&devkey=9n7OFeRlp0OfsXycY0IMgX8k79D60vnu&key=cafecafe"
 
   describe "createBookmarkQ" $ do
     it "produces a correctly formatted query" $
@@ -80,7 +78,7 @@ spec = do
 
   describe "deleteBookmarkQ" $
     it "produces a correctly formatted query" $
-      deleteBookmarkQ "took" 123456789 `shouldBe` "token=took&bk_id=123456789"
+      deleteBookmarkQ "took" "123456789" `shouldBe` "token=took&bk_id=123456789"
 
   describe ">&&<" $ do
     it "the cat smiles"  $ "foo" >&&< "bar" `shouldBe` "foo&bar"
@@ -109,8 +107,8 @@ spec = do
       \s t -> formatParam s (Specific t) == s ++ t
 
   describe "tokenStr" $
-    prop "tokenStr s == \"token=s\"" $
-      \s -> tokenStr s == "token=" ++ s
+    prop "tokenStr s == \"devkey=<x>&key=s\"" $
+      \s -> tokenStr s == "devkey=9n7OFeRlp0OfsXycY0IMgX8k79D60vnu&key=" ++ s
 
   describe "if'" $ do
     prop "if' == if-then-else :: Int" $
