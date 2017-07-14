@@ -150,7 +150,7 @@ parseCommon = Common
                $  short 'f'
                <> long "format"
                <> metavar "BMFORMAT"
-               <> help "bid,url,listid,listname,creation,all")
+               <> help "id,title,url,note,creation")
   <*> optional (switch
                $  short 'c'
                <> long "color"
