@@ -126,7 +126,8 @@ parseOptions common_def = vers *> common
   where
     common = Options <$> parseCommon common_def <*> parseCommand
     vers = infoOption version (long "version" <> short 'v'
-                                              <> help "Display version")
+                                              <> help "Display version"
+                                              <> hidden)
 
 -- | Parse the optional sort method.
 parseSortMethod :: Parser SortMethod
