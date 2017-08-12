@@ -54,7 +54,7 @@ library
   exposed-modules:     SavedIO, SavedIO.Types, SavedIO.Util, SavedIO.Internal
   build-depends:       aeson >= 0.7.0.6,
                        ansi-terminal,
-                       base >=4.8 && <4.9,
+                       base >=4.8 && <5.0,
                        bytestring,
                        optional-args,
                        http-client,
@@ -78,7 +78,7 @@ executable saved-io
   other-extensions:    OverloadedStrings
   
   -- Other library packages from which modules are imported.
-  build-depends:       base >=4.8 && <4.9,
+  build-depends:       base >=4.8 && <5.0,
                        ansi-terminal,
                        bytestring,
                        aeson >= 0.7.0.6,
@@ -101,7 +101,7 @@ executable saved-io
   ghc-options:         -Wall
 
 test-suite hspec
-  build-depends:       base >=4.8 && <4.9,
+  build-depends:       base >=4.8 && <5.0,
                        ansi-terminal,
                        hspec >= 1.8,
                        optional-args,

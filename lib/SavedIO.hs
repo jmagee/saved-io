@@ -93,11 +93,10 @@ import           Data.Optional              (Optional (..))
 import           Data.Text                  hiding (foldl, foldr, group)
 import           Network.HTTP.Client        (defaultManagerSettings)
 import           Network.HTTP.Conduit       (RequestBody (..), httpLbs, method,
-                                             newManager, parseUrl, requestBody,
-                                             requestHeaders, responseBody,
-                                             simpleHttp)
-import           Network.HTTP.Types.Method  (Method, methodDelete,
-                                             methodPost)
+                                             newManager, parseRequest,
+                                             requestBody, requestHeaders,
+                                             responseBody, simpleHttp)
+import           Network.HTTP.Types.Method  (Method, methodDelete, methodPost)
 
 -- | Base URL for saved io API.
 savedIOURL :: String
@@ -111,7 +110,7 @@ savedIO = simpleHttp . (++) savedIOURL
 savedIOHTTP :: Method -> String -> IO B.ByteString
 savedIOHTTP htype body = do
   manager <- newManager defaultManagerSettings
-  initReq <- parseUrl savedIOURL
+  initReq <- parseRequest savedIOURL
   let req = initReq { method = htype
                     , requestHeaders = [("Content-Type"
                                        , "application/x-www-form-urlencoded")
