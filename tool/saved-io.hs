@@ -3,27 +3,30 @@
 
 module Main where
 
-import            CLOpts                  as      CL
-import            SavedIO
-import            SavedIO.Util
+import           CLOpts                     as CL
+import           SavedIO
+import           SavedIO.Util
+import           Version
 
-import            Data.Aeson                      (eitherDecode', toJSON)
-import            Data.Aeson.Encode.Pretty        (encodePretty)
-import qualified  Data.ByteString.Lazy.Char8 as   B
-import            Data.Function                   (on)
-import            Data.List                       (sortBy)
-import            Data.Optional                   (Optional(..))
-import            Data.Text                       (Text)
-import qualified  Data.Text               as      T
-import qualified  Data.Text.IO            as      T
-import            System.Directory                (doesFileExist, getHomeDirectory)
-import            System.IO                       (hSetEncoding, stdout, utf8)
+import           Data.Aeson                 (eitherDecode', toJSON)
+import           Data.Aeson.Encode.Pretty   (encodePretty)
+import qualified Data.ByteString.Lazy.Char8 as B
+import           Data.Function              (on)
+import           Data.List                  (sortBy)
+import           Data.Optional              (Optional (..))
+import           Data.Text                  (Text)
+import qualified Data.Text                  as T
+import qualified Data.Text.IO               as T
+import           System.Directory           (doesFileExist, getHomeDirectory)
+import           System.IO                  (hSetEncoding, stdout, utf8)
 
 main :: IO ()
 main = hSetEncoding stdout utf8 -- Hack for Windows to avoid "commitBuffer: invalid argument"
      >> getRCDefaults
-     >>= execParser . (`withInfo` "Command Line Interface to saved.io") . parseOptions
+     >>= execParser . (`withInfo` infoStr) . parseOptions
      >>= run
+  where
+    infoStr = "Command Line Interface to saved.io " ++ version
 
 -- | Read default settings for Common options from RC file.
 -- If there is no RC file or it cannot be decoded then this returns
