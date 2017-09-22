@@ -18,10 +18,6 @@ import           Data.Optional (Optional (..))
 import           Data.Time     (Day, UTCTime (..), defaultTimeLocale,
                                 formatTime)
 
--- | The developer API key
-{-devKey :: Token-}
-{-devKey = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"-}
-
 -- | Prepare the query string for retrieveBookmark
 retrieveBookmarksQ :: Token
                    -> Optional BMGroup
