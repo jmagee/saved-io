@@ -19,8 +19,8 @@ import           Data.Time     (Day, UTCTime (..), defaultTimeLocale,
                                 formatTime)
 
 -- | The developer API key
-devKey :: Token
-devKey = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+{-devKey :: Token-}
+{-devKey = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"-}
 
 -- | Prepare the query string for retrieveBookmark
 retrieveBookmarksQ :: Token
@@ -94,5 +94,5 @@ formatParam s (Specific x) = s ++ x
 
 -- | Format a token into a URL parameter.
 tokenStr :: Token -> String
-tokenStr t = formatParam "devkey=" (Specific devKey)
-           >&&< formatParam "key=" (Specific t)
+tokenStr (Token dev user) =
+  formatParam "devkey=" (Specific dev) >&&< formatParam "key=" (Specific user)

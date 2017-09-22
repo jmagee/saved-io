@@ -1,7 +1,7 @@
 -- | Bindings for saved.io, a cloud-based bookmark service.
 --
 -- This library provides a Haskell interface for thes API described here:
--- http://saved.io/api.php
+-- http://devapi.saved.io
 --
 -- = Usage Example
 -- == Imports/setup used in the examples
@@ -59,7 +59,11 @@ module SavedIO (
 , createBookmark
 , deleteBookmark
 
+  -- * Token creation
+, mkToken
+
   -- * Exported types
+, Key
 , Token
 , BMGroup
 , BMFormat
@@ -176,7 +180,7 @@ createBookmark token title url group =
 deleteBookmark :: Token   -- ^ API token
                -> BMId    -- ^ Bookmark ID
                -- | Either API error message or Success flag
-               -- Note that this call returns succes even if it
+               -- Note that this call returns success even if it
                -- did not actually delete anything.
                -> IO String
 deleteBookmark token bkid =

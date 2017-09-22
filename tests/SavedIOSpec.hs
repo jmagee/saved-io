@@ -10,12 +10,16 @@ import            SavedIO.Internal
 import            SavedIO.Types
 import            SavedIO.Util
 
-import            Data.Optional                   (Optional(..))
-import            Data.Text
-import            Data.Time                       (fromGregorian)
-import qualified  System.Console.ANSI     as      CS
-import            Test.Hspec
-import            Test.Hspec.QuickCheck
+import           Data.Optional             (Optional (..))
+import           Data.Text
+import           Data.Time                 (fromGregorian)
+import qualified System.Console.ANSI       as CS
+import           Test.Hspec
+import           Test.Hspec.QuickCheck
+import           Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
+
+instance Arbitrary Token where
+  arbitrary = Token <$> arbitrary <*> arbitrary
 
 spec :: Spec
 spec = do
@@ -42,35 +46,39 @@ spec = do
     it "is expected" $
       defBookmarkConfig `shouldBe` BookmarkConfig defBookKeys Nothing
 
+  let token = Token "babecafe" "cafebabe"
   describe "retrieveBookmarksQ" $ do
     it "produces a correctly formatted query" $
-      retrieveBookmarksQ "cafebabe"
+      retrieveBookmarksQ token
                          (Specific "aardvark")
                          (Specific 10)
-        `shouldBe` "?&&devkey=9n7OFeRlp0OfsXycY0IMgX8k79D60vnu&key=cafebabe&limit=10&list=aardvark"
+        `shouldBe` "?&&devkey=babecafe&key=cafebabe&limit=10&list=aardvark"
     it "handles optional arguments" $
-      retrieveBookmarksQ "deadcafe" Default Default
-        `shouldBe` "?&&devkey=9n7OFeRlp0OfsXycY0IMgX8k79D60vnu&key=deadcafe"
+      retrieveBookmarksQ token Default Default
+        `shouldBe` "?&&devkey=babecafe&key=cafebabe"
     it "handles a mix of optional arguments" $
-      retrieveBookmarksQ "deadcafe" (Specific "foo") (Specific 1984)
-        `shouldBe` "?&&devkey=9n7OFeRlp0OfsXycY0IMgX8k79D60vnu&key=deadcafe&limit=1984&list=foo"
+      retrieveBookmarksQ token (Specific "foo") (Specific 1984)
+        `shouldBe` "?&&devkey=babecafe&key=cafebabe&limit=1984&list=foo"
 
+  let token = Token "babebabe" "cafecafe"
   describe "getBookmarkQ" $
     it "produces a correctly formatted query" $
-      getBookmarkQ "babebabe" "XyyZ"
-        `shouldBe` "/XyyZ?devkey=9n7OFeRlp0OfsXycY0IMgX8k79D60vnu&key=babebabe"
+      getBookmarkQ token"XyyZ"
+        `shouldBe` "/XyyZ?devkey=babebabe&key=cafecafe"
 
+  let token = Token "babe" "cafe"
   describe "createBookmarkQ" $ do
     it "produces a correctly formatted query" $
-      createBookmarkQ "toktok" "Everything" "http://haskell.org" Default
-        `shouldBe` "devkey=9n7OFeRlp0OfsXycY0IMgX8k79D60vnu&key=toktok&title=Everything&url=http://haskell.org"
+      createBookmarkQ token "Everything" "http://haskell.org" Default
+        `shouldBe` "devkey=babe&key=cafe&title=Everything&url=http://haskell.org"
     it "produces a correctly formatted query with group" $
-      createBookmarkQ "toktok" "Everything" "http://haskell.org" "hask"
-        `shouldBe` "devkey=9n7OFeRlp0OfsXycY0IMgX8k79D60vnu&key=toktok&title=Everything&url=http://haskell.org&list=hask"
+      createBookmarkQ token "Everything" "http://haskell.org" "hask"
+        `shouldBe` "devkey=babe&key=cafe&title=Everything&url=http://haskell.org&list=hask"
 
+  let token = Token "cafe" "babe"
   describe "deleteBookmarkQ" $
     it "produces a correctly formatted query" $
-      deleteBookmarkQ "took" "123456789" `shouldBe` "devkey=9n7OFeRlp0OfsXycY0IMgX8k79D60vnu&key=took&id=123456789"
+      deleteBookmarkQ token "123456789" `shouldBe` "devkey=cafe&key=babe&id=123456789"
 
   describe ">&&<" $ do
     it "the cat smiles"  $ "foo" >&&< "bar" `shouldBe` "foo&bar"
@@ -100,7 +108,7 @@ spec = do
 
   describe "tokenStr" $
     prop "tokenStr s == \"devkey=<x>&key=s\"" $
-      \s -> tokenStr s == "devkey=9n7OFeRlp0OfsXycY0IMgX8k79D60vnu&key=" ++ s
+      \s -> tokenStr s == "devkey=" ++ _devKey s ++ "&key=" ++ _userKey s
 
   describe "if'" $ do
     prop "if' == if-then-else :: Int" $
@@ -117,3 +125,7 @@ spec = do
       \x y z -> (x ? y $ z) == if x then y else z :: Char
     prop "? == if-then-else :: [Float]) " $
       \x y z -> (x ? y $ z) == if x then y else z :: [Float]
+
+  describe "mkToken" $
+    prop "mkToken a b == Token a b" $
+      \a b -> mkToken a b == Token a b 

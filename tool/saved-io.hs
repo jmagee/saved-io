@@ -18,6 +18,7 @@ import           Data.Text                  (Text)
 import qualified Data.Text                  as T
 import qualified Data.Text.IO               as T
 import           System.Directory           (doesFileExist, getHomeDirectory)
+import           System.Exit                (die)
 import           System.IO                  (hSetEncoding, stdout, utf8)
 
 main :: IO ()
@@ -44,18 +45,19 @@ getRCDefaults = do
         pure $ defaults d
       defaults (Left _)  = comDef
       defaults (Right x) = x
-      comDef = Common Default Default Default
+      comDef = Common Default Default Default Default
                       Default Default Default
 
 run :: CL.Options -> IO ()
-run (CL.Options c@(Common t format color limit sort sortMethod) cmd) =
-  case cmd of
-    Listing group             ->
-      retrieveBookmarks (token t) group limit
+run (CL.Options c@(Common dev user format color limit sort sortMethod) cmd) =
+  let token = checkToken (mkToken <$> dev <*> user) 
+  in case cmd of
+    Listing group             -> token
+      >>= \t -> retrieveBookmarks t group limit
       >>= executeIf (\x -> printTextList $ ppMarkDef <$> sortIf sort sortMethod x)
 
-    Search query searchFormat ->
-      retrieveBookmarks (token t) Default limit
+    Search query searchFormat -> token
+      >>= \t -> retrieveBookmarks t Default limit
       >>= executeIf (\x -> printTextList $ ppMarkDef <$>
                            sortIf sort
                                   sortMethod
@@ -63,15 +65,15 @@ run (CL.Options c@(Common t format color limit sort sortMethod) cmd) =
                                                                      query)
                                                     x))
 
-    AddMark title url group   ->
-      createBookmark (token t) title url group
+    AddMark title url group   -> token
+      >>= \t -> createBookmark t title url group
       >>= executeIf (\x -> putStrLn $ "Success!  Created: " ++ x)
 
-    DelMark bkid              ->
-      deleteBookmark (token t) bkid >>= \_ -> pure ()
+    DelMark bkid              -> token
+      >>= \t -> deleteBookmark t bkid >>= \_ -> pure ()
 
-    GetMark bkid              ->
-      getBookmark (token t) bkid >>= executeIf (T.putStrLn . ppMarkDef)
+    GetMark bkid              -> token
+      >>= \t -> getBookmark t bkid >>= executeIf (T.putStrLn . ppMarkDef)
 
     MakeRC                    -> do
       home <- getHomeDirectory
@@ -84,8 +86,9 @@ run (CL.Options c@(Common t format color limit sort sortMethod) cmd) =
       ppMarkDef = ppBookmark $ BookmarkConfig (formatText format) useColor
       sortIf (Specific True) m x = sortMarks m x
       sortIf _ _ x               = x
-      token Default              = error "Missing token; -t|--token option required."
-      token (Specific x)         = x
+      checkToken Default         = die $ "Missing keys; -d|--devkey" ++
+                                       " and -u|--userkey options required."
+      checkToken (Specific x)    = pure x
 
 -- | Print a list of Text.
 printTextList :: [Text] -> IO ()

@@ -53,7 +53,8 @@ data SortMethod = SortByTitle Direction deriving (Read, Show)
 -- | Common options.  These are options that apply to at least two
 -- different Commands.
 data Common = Common
-              (Optional Token)
+              (Optional Key)
+              (Optional Key)
               (Optional BMFormat)
               (Optional Color)
               (Optional Limit)
@@ -63,17 +64,19 @@ data Common = Common
 
 instance FromJSON Common where
   parseJSON (Object v) =
-    Common <$>  v .:¿ "token"
-           <*>  v .:¿ "format"
-           <*>  v .:¿ "color"
+    Common <$> v .:¿ "devkey"
+           <*> v .:¿ "userkey"
+           <*> v .:¿ "format"
+           <*> v .:¿ "color"
            <*> v .:¿ "limit"
            <*> v .:¿ "sort"
            <*> pure Default
   parseJSON _ = mzero
 
 instance ToJSON Common where
-  toJSON (Common token format color limit sort _) =
-    object $  "token" `encodeOpt` token
+  toJSON (Common dev user format color limit sort _) =
+    object $  "devkey" `encodeOpt` dev
+           ++ "userkey" `encodeOpt` user
            ++ "format" `encodeOpt` format
            ++ "color" `encodeOpt` color
            ++ "limit" `encodeOpt` limit
@@ -108,9 +111,10 @@ optionTrue _                 _                = Specific True
 
 -- | Merge two sets of Common options, where Specific overrides default.
 mergeCommon :: Common -> Common -> Common
-mergeCommon (Common aToken aFormat aColor aLimit aSort aMethod)
-            (Common bToken bFormat bColor bLimit bSort bMethod)
-  = Common (pickSpecific aToken bToken)
+mergeCommon (Common aDev aUser aFormat aColor aLimit aSort aMethod)
+            (Common bDev bUser bFormat bColor bLimit bSort bMethod)
+  = Common (pickSpecific aDev bDev)
+           (pickSpecific aUser bUser)
            (pickSpecific aFormat bFormat)
            (optionTrue aColor bColor)
            (pickSpecific aLimit bLimit)
@@ -127,12 +131,12 @@ parseOptions common_def =
           <*> parseCommand
 
 -- | Parse the token option.
-parseToken :: Parser (Optional Token)
-parseToken = optional $ strOption
-  $  short 't'
-  <> long "token"
-  <> metavar "TOKEN"
-  <> help "Saved.io token;fixme"
+{-parseToken :: Parser (Optional Token)-}
+{-parseToken = optional $ strOption-}
+  {-$  short 't'-}
+  {-<> long "token"-}
+  {-<> metavar "TOKEN"-}
+  {-<> help "Saved.io token;fixme"-}
 
 -- | Parse the optional sort method.
 parseSortMethod :: Parser SortMethod
@@ -145,7 +149,16 @@ parseSortMethod = SortByTitle
 -- | Parse the optional common options and flags.
 parseCommon :: Parser Common
 parseCommon = Common
-  <$> parseToken
+  <$> optional (strOption
+               $  short 'd'
+               <> long "devkey"
+               <> metavar "DEVKEY"
+               <> help "Saved.io developer key. See http://devapi.saved.io/key")
+  <*> optional (strOption
+               $  short 'u'
+               <> long "userkey"
+               <> metavar "USERKEY"
+               <> help "Saved.io user key. See http://saved.io/key")
   <*> optional (strOption
                $  short 'f'
                <> long "format"

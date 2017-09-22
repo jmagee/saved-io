@@ -3,17 +3,21 @@
 
 module SavedIO.Types (
   -- * Exported Types
-  Token
+  Key
+, Token (..)
 , BMGroup
 , BMFormat
 , Query
-, Bookmark(..)
-, BookmarkConfig(..)
-, SavedIOResponse(..)
-, SearchKey(..)
+, Bookmark (..)
+, BookmarkConfig (..)
+, SavedIOResponse (..)
+, SearchKey (..)
 , BMTitle
 , BMUrl
 , BMId
+
+  -- * Token creation
+, mkToken
 
   -- * Pretty Printing Utilities
 , defBookColors
@@ -36,8 +40,20 @@ import qualified Data.Text           as T
 import           Data.Time           (Day, defaultTimeLocale, parseTimeOrError)
 import qualified System.Console.ANSI as CS
 
--- | The saved.io API Token.  It can be generated here: linkme.
-type Token          = String
+-- | Key type for API keys.  Alias of string
+type Key = String
+
+-- | The saved.io API Token.
+-- User keys can be generated here: http://saved.io/key
+-- Dev keys can be generated here: http://devapi.saved.io/key
+data Token =
+  Token { _devKey  :: Key
+        , _userKey :: Key
+        } deriving (Show, Eq)
+
+-- | Create a token from the devkey and userkey.
+mkToken :: Key -> Key -> Token
+mkToken = Token
 
 -- | The bookmark group.  saved.io commonly refers to this as a "list", but
 -- that terminology is a bit overloaded.
