@@ -28,6 +28,9 @@ module SavedIO.Types (
 
   -- * Search Utility
 , extractSearchKey
+
+  -- * Misc Utility 
+, dateFromString
 ) where
 
 import           Control.Monad       (mzero)

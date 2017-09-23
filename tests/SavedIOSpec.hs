@@ -12,7 +12,7 @@ import            SavedIO.Util
 
 import           Data.Optional             (Optional (..))
 import           Data.Text
-import           Data.Time                 (fromGregorian)
+import           Data.Time                 (Day, fromGregorian)
 import qualified System.Console.ANSI       as CS
 import           Test.Hspec
 import           Test.Hspec.QuickCheck
@@ -100,6 +100,12 @@ spec = do
     it "knows how long since 1970-01-01" $
       epochTime (fromGregorian 1970 01 01)  == "0"
 
+  describe "dateFromString" $ do
+    it "converts 2016-04-08 12:00:00" $
+      dateFromString "2016-04-08 12:00:00" == (read "2016-04-08" :: Day)
+    it "converts 2016-4-8 12:00:00" $
+      dateFromString "2016-4-8 12:00:00" == (read "2016-04-08" :: Day)
+
   describe "formatParam" $ do
     prop "s `formatParam` Default == empty string" $
       \s -> formatParam s Default == ""
@@ -128,4 +134,24 @@ spec = do
 
   describe "mkToken" $
     prop "mkToken a b == Token a b" $
-      \a b -> mkToken a b == Token a b 
+      \a b -> mkToken a b == Token a b
+
+  describe "Token" $
+    prop "(Token a b == Token c d) == (a == c && b == d)" $
+      \a b c d -> let ab = mkToken a b
+                      cd = mkToken c d
+                  in (ab == cd) == (a == c && b == d)
+
+  describe "perhaps" $ do
+    prop "perhaps x id Default == x :: Int" $
+      \x -> perhaps x id Default == (x :: Int)
+    prop "perhaps x id (Specific y) == y :: Int" $
+      \x y -> perhaps x id (Specific y) == (y :: Int)
+    prop "perhaps x id Default == x :: Float" $
+      \x -> perhaps x id Default == (x :: Float)
+    prop "perhaps x id (Specific y) == y :: Float" $
+      \x y -> perhaps x id (Specific y) == (y :: Float)
+    prop "perhaps x id Default == x :: String" $
+      \x -> perhaps x id Default == (x :: String)
+    prop "perhaps x id (Specific y) == y :: String" $
+      \x y -> perhaps x id (Specific y) == (y :: String)
