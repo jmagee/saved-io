@@ -19,7 +19,13 @@ import qualified Data.Text                  as T
 import qualified Data.Text.IO               as T
 import           System.Directory           (doesFileExist, getHomeDirectory)
 import           System.Exit                (die)
-import           System.IO                  (hSetEncoding, stdout, utf8)
+import           System.FilePath.Posix      (pathSeparator)
+import           System.IO                  (hPutStrLn, hSetEncoding, stderr,
+                                             stdout, utf8)
+
+-- | RC File path
+rcFile :: IO FilePath
+rcFile = fmap (++ pathSeparator : ".saved-io.rc") getHomeDirectory
 
 main :: IO ()
 main = hSetEncoding stdout utf8 -- Hack for Windows to avoid "commitBuffer: invalid argument"
@@ -34,7 +40,7 @@ main = hSetEncoding stdout utf8 -- Hack for Windows to avoid "commitBuffer: inva
 -- Common of all Default.
 getRCDefaults :: IO Common
 getRCDefaults = do
-  rc <- fmap (++ "/.saved-io.rc") getHomeDirectory
+  rc <- rcFile
   exists <- doesFileExist rc
   exists ? decode rc $ pure comDef
     where
@@ -76,8 +82,8 @@ run (CL.Options c@(Common dev user format color limit sort sortMethod) cmd) =
       >>= \t -> getBookmark t bkid >>= executeIf (T.putStrLn . ppMarkDef)
 
     MakeRC                    -> do
-      home <- getHomeDirectory
-      putStrLn $ "#Redirect the contents below to " ++ home ++ "/.saved-io.rc"
+      rc <- rcFile
+      hPutStrLn stderr $ "#Redirect the contents below to " ++ rc
       B.putStrLn $ encodePretty $ toJSON c
 
     where

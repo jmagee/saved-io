@@ -84,6 +84,7 @@ executable saved-io
                        aeson >= 0.7.0.6,
                        aeson-pretty,
                        directory,
+                       filepath,
                        gitrev,
                        http-conduit,
                        http-types,
