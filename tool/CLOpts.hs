@@ -12,16 +12,16 @@ module CLOpts
 , execParser -- from Options.Applicative
 ) where
 
-import            SavedIO
-import            SavedIO.Util
+import           SavedIO
+import           SavedIO.Util
 
-import            Control.Monad                   (mzero)
-import            Data.Aeson
-import qualified  Data.Aeson.Types        as      A
-import            Data.Optional                   (Optional(..))
-import            Data.Semigroup                  ((<>))
-import            Data.Text                       (Text)
-import            Options.Applicative     hiding  (optional)
+import           Control.Monad       (mzero)
+import           Data.Aeson
+import qualified Data.Aeson.Types    as A
+import           Data.Optional       (Optional (..))
+import           Data.Semigroup      ((<>))
+import           Data.Text           (Text)
+import           Options.Applicative hiding (optional)
 
 -- | Color flag.
 type Color  = Bool
@@ -129,14 +129,6 @@ parseOptions :: Common -> Parser Options
 parseOptions common_def =
   Options <$> ((common_def `mergeCommon`) <$> parseCommon)
           <*> parseCommand
-
--- | Parse the token option.
-{-parseToken :: Parser (Optional Token)-}
-{-parseToken = optional $ strOption-}
-  {-$  short 't'-}
-  {-<> long "token"-}
-  {-<> metavar "TOKEN"-}
-  {-<> help "Saved.io token;fixme"-}
 
 -- | Parse the optional sort method.
 parseSortMethod :: Parser SortMethod

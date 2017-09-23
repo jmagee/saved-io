@@ -50,7 +50,7 @@ getRCDefaults = do
 
 run :: CL.Options -> IO ()
 run (CL.Options c@(Common dev user format color limit sort sortMethod) cmd) =
-  let token = checkToken (mkToken <$> dev <*> user) 
+  let token = checkToken (mkToken <$> dev <*> user)
   in case cmd of
     Listing group             -> token
       >>= \t -> retrieveBookmarks t group limit

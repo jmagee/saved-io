@@ -194,7 +194,7 @@ data SearchKey    = BID SearchString       -- ^ Search by ID.
 extractSearchKey:: Optional BMFormat -> Query -> SearchKey
 extractSearchKey Default q = Title q
 extractSearchKey (Specific format) q
-  | "id" `L.isInfixOf` format       = BID q
+  | "id" `L.isInfixOf` format        = BID q
   | "url" `L.isInfixOf` format       = Url q
   | "title" `L.isInfixOf` format     = Title q
   | "note" `L.isInfixOf` format      = Note q

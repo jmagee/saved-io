@@ -152,20 +152,11 @@ getBookmark token bid = do
 -- This call does retrieves all bookmarks then does a search.  The saved.io
 -- API does not provide a server side search call.
 searchBookmarks :: SearchKey -> [Bookmark] -> [Bookmark]
-searchBookmarks (BID x) marks
-  = L.filter (\y -> x == _id y) marks
-
-searchBookmarks (Url x) marks
-  = L.filter (\y -> pack x `isInfixOf` _url y) marks
-
-searchBookmarks (Title x) marks
-  = L.filter (\y -> pack x `isInfixOf` _title y) marks
-
-searchBookmarks (Note x) marks
-  = L.filter (\y -> pack x `isInfixOf` _note y) marks
-
-searchBookmarks (Creation x) marks
-  = L.filter (\y -> x == _creation y) marks
+searchBookmarks (BID x)      = L.filter $ (x ==) . _id
+searchBookmarks (Url x)      = L.filter $ (pack x `isInfixOf`) . _url
+searchBookmarks (Title x)    = L.filter $ (pack x `isInfixOf`) . _title
+searchBookmarks (Note x)     = L.filter $ (pack x `isInfixOf`) . _note
+searchBookmarks (Creation x) = L.filter $ (x ==) . _creation
 
 -- | Create a bookmark entry.
 createBookmark :: Token             -- ^ API Token
