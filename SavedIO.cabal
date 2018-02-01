@@ -21,7 +21,7 @@ description:         Saved.io is a cloud based bookmarking site.  This
                      and a command line tool that interfaces with saved.io.
 
 -- The license under which the package is released.
-license:             BSD3
+license:             BSD2
 
 -- The file containing the license text.
 license-file:        LICENSE
