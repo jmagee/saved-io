@@ -16,7 +16,8 @@ import           SavedIO
 import           SavedIO.Util
 
 import           Control.Monad       (mzero)
-import           Data.Aeson
+import           Data.Aeson          (FromJSON, Object, ToJSON, Value (..),
+                                      object, (.:?), (.=))
 import qualified Data.Aeson.Types    as A
 import           Data.Optional       (Optional (..))
 import           Data.Semigroup      ((<>))
