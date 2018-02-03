@@ -89,38 +89,29 @@ instance ToJSON Common where
 -- | Retrieve the value associated with the given key of an Object.
 -- The result is 'Default' if the key is not present.
 --
--- This is equivelant to the .:? from the Aeson library, but
+-- This is equivalent to the .:? from the Aeson library, but
 -- converts the 'Maybe' result into an 'Optional' result.
 (.:¿) :: FromJSON a => Object -> Text -> A.Parser (Optional a)
 x .:¿ y = go =<< (x .:? y)
   where go Nothing  = pure Default
         go (Just g) = pure $ Specific g
 
--- | Given two Optionals, pick the one that is the most specific.
--- If both are specific, then favor the second (RHS).
-pickSpecific :: Optional a -> Optional a -> Optional a
-pickSpecific (Specific x) Default = pure x
-pickSpecific _ (Specific x)       = pure x
-pickSpecific _ _                  = Default
+-- | The last item wins!  Returns the last item in the list, or 
+-- the default item in the first parameter.
+lastWins :: a -> [a] -> a
+lastWins first [] = first
+lastWins _ lst = last lst
 
--- | Given two Optional Bools, yeild True if either are True.
-optionTrue :: Optional Bool -> Optional Bool -> Optional Bool
-optionTrue (Specific True)   _                = Specific True
-optionTrue _                 (Specific False) = Specific False
-optionTrue Default           Default          = Default
-optionTrue _                 _                = Specific True
+-- | A toggle - a pair of on/off switches with a default value; we accept
+-- zero or more of them and the last one wins.
+toggle :: Bool -> Parser Bool -> Parser Bool -> Parser Bool
+toggle def a b = lastWins def <$> many (a <|> b)
 
--- | Merge two sets of Common options, where Specific overrides default.
-mergeCommon :: Common -> Common -> Common
-mergeCommon (Common aDev aUser aFormat aColor aLimit aSort aMethod)
-            (Common bDev bUser bFormat bColor bLimit bSort bMethod)
-  = Common (pickSpecific aDev bDev)
-           (pickSpecific aUser bUser)
-           (pickSpecific aFormat bFormat)
-           (optionTrue aColor bColor)
-           (pickSpecific aLimit bLimit)
-           (optionTrue aSort bSort)
-           (pickSpecific aMethod bMethod)
+-- | Pick the option if it is specified, otherwise use the provided default.
+pick :: Alternative f => Optional a -> f a -> f (Optional a)
+pick def x = case def of
+  Specific d -> Specific <$> (lastWins d <$> many x) <|> pure Default
+  Default    -> Specific <$> (last <$> some x) <|> pure Default
 
 -- | Full command line option format.
 data Options = Options Common Command deriving (Show)
@@ -128,47 +119,53 @@ data Options = Options Common Command deriving (Show)
 -- | Parse the full command line options.
 parseOptions :: Common -> Parser Options
 parseOptions common_def =
-  Options <$> ((common_def `mergeCommon`) <$> parseCommon)
-          <*> parseCommand
+  Options <$> parseCommon common_def <*> parseCommand
 
 -- | Parse the optional sort method.
 parseSortMethod :: Parser SortMethod
 parseSortMethod = SortByTitle
   <$> option auto ( long "sort-method"
                   <> metavar "SORT-DIRECTION"
-                  <> help "Ascending|Descending"
-                  )
+                  <> help "Ascending|Descending")
 
 -- | Parse the optional common options and flags.
-parseCommon :: Parser Common
-parseCommon = Common
-  <$> optional (strOption
+parseCommon :: Common -> Parser Common
+parseCommon (Common dev user format color limit sort _) = Common
+  <$> pick dev (strOption
                $  short 'd'
                <> long "devkey"
                <> metavar "DEVKEY"
                <> help "Saved.io developer key. See http://devapi.saved.io/key")
-  <*> optional (strOption
-               $  short 'u'
-               <> long "userkey"
-               <> metavar "USERKEY"
-               <> help "Saved.io user key. See http://saved.io/key")
-  <*> optional (strOption
-               $  short 'f'
-               <> long "format"
-               <> metavar "BMFORMAT"
-               <> help "id,title,url,note,creation")
-  <*> optional (switch
-               $  short 'c'
-               <> long "color"
-               <> help "Use color")
-  <*> optional (option auto
-               $  long "limit"
-               <> metavar "N"
-               <> help "Limit to N results")
-  <*> optional (switch
-               $  short 's'
-               <> long "sort"
-               <> help "Sort output")
+  <*> pick user (strOption
+                $  short 'u'
+                <> long "userkey"
+                <> metavar "USERKEY"
+                <> help "Saved.io user key. See http://saved.io/key")
+  <*> pick format (strOption
+                  $  short 'f'
+                  <> long "format"
+                  <> metavar "BMFORMAT"
+                  <> help "id,title,url,note,creation")
+  <*> optional (toggle (perhaps False id color)
+                       (flag' True
+                              $  short 'c'
+                              <> long "color"
+                              <> help "Enable color output")
+                       (flag' False
+                              $  short 'b'
+                              <> long "no-color"
+                              <> help "Disable color output"))
+  <*> pick limit (option auto
+                 $  long "limit"
+                 <> metavar "N"
+                 <> help "Limit to N results")
+  <*> optional (toggle (perhaps False id sort)
+                       (flag' True $  short 's'
+                                   <> long "sort"
+                                   <> help "Sort output")
+                       (flag' False $  short 'n'
+                                    <> long "no-sort"
+                                    <> help "Do not sort output"))
   <*> optional parseSortMethod
 
 -- | Parse the listing command.
