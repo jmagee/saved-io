@@ -168,7 +168,7 @@ parseCommon (Common dev user format color limit sort _) = Common
                        (flag' False $  short 'n'
                                     <> long "no-sort"
                                     <> help "Do not sort output")
-  <*> optional parseSortMethod
+  <*> pick Default parseSortMethod
 
 -- | Parse the listing command.
 parseListing :: Parser Command
@@ -178,10 +178,10 @@ parseListing = Listing <$> optional (argument str (metavar "BMGROUP"))
 parseSearch :: Parser Command
 parseSearch = Search
   <$> argument str (metavar "SEARCH-STR")
-  <*> optional (strOption $  short '/'
-                          <> long "type"
-                          <> metavar "SEARCH-TYPE"
-                          <> help "bid,url,groupid,groupname,creation")
+  <*> pick Default (strOption $  short '/'
+                              <> long "type"
+                              <> metavar "SEARCH-TYPE"
+                              <> help "bid,url,groupid,groupname,creation")
 
 -- |  Parse the add bookmark command.
 parseAddMark :: Parser Command
