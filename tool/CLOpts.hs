@@ -96,7 +96,7 @@ x .:¿ y = go =<< (x .:? y)
   where go Nothing  = pure Default
         go (Just g) = pure $ Specific g
 
--- | The last item wins!  Returns the last item in the list, or 
+-- | The last item wins!  Returns the last item in the list, or
 -- the default item in the first parameter.
 lastWins :: a -> [a] -> a
 lastWins first [] = first
@@ -104,14 +104,16 @@ lastWins _ lst = last lst
 
 -- | A toggle - a pair of on/off switches with a default value; we accept
 -- zero or more of them and the last one wins.
-toggle :: Bool -> Parser Bool -> Parser Bool -> Parser Bool
-toggle def a b = lastWins def <$> many (a <|> b)
+toggle :: Alternative f => Optional Bool -> f Bool -> f Bool -> f (Optional Bool)
+toggle def a b = pick def (a <|> b)
 
--- | Pick the option if it is specified, otherwise use the provided default.
+-- | Pick the last instance of an option if it is specified, otherwise use the
+-- provided default.
 pick :: Alternative f => Optional a -> f a -> f (Optional a)
-pick def x = case def of
-  Specific d -> Specific <$> (lastWins d <$> many x) <|> pure Default
-  Default    -> Specific <$> (last <$> some x) <|> pure Default
+pick def x = perhaps checkOptsNoDef checkOptsWithDef def
+  where
+    checkOptsNoDef     = Specific <$> (last <$> some x) <|> pure Default
+    checkOptsWithDef d = Specific <$> lastWins d <$> many x
 
 -- | Full command line option format.
 data Options = Options Common Command deriving (Show)
@@ -146,7 +148,7 @@ parseCommon (Common dev user format color limit sort _) = Common
                   <> long "format"
                   <> metavar "BMFORMAT"
                   <> help "id,title,url,note,creation")
-  <*> optional (toggle (perhaps False id color)
+  <*> toggle color
                        (flag' True
                               $  short 'c'
                               <> long "color"
@@ -154,18 +156,18 @@ parseCommon (Common dev user format color limit sort _) = Common
                        (flag' False
                               $  short 'b'
                               <> long "no-color"
-                              <> help "Disable color output"))
+                              <> help "Disable color output")
   <*> pick limit (option auto
                  $  long "limit"
                  <> metavar "N"
                  <> help "Limit to N results")
-  <*> optional (toggle (perhaps False id sort)
+  <*> toggle sort
                        (flag' True $  short 's'
                                    <> long "sort"
                                    <> help "Sort output")
                        (flag' False $  short 'n'
                                     <> long "no-sort"
-                                    <> help "Do not sort output"))
+                                    <> help "Do not sort output")
   <*> optional parseSortMethod
 
 -- | Parse the listing command.
