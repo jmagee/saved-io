@@ -19,7 +19,7 @@ import           Control.Monad       (mzero)
 import           Data.Aeson          (FromJSON, Object, ToJSON, Value (..),
                                       object, (.:?), (.=))
 import qualified Data.Aeson.Types    as A
-import           Data.Char           (toLower, toUpper)
+import           Data.Char           (toLower)
 import           Data.Optional       (Optional (..))
 import           Data.Semigroup      ((<>))
 import           Data.Text           (Text)
@@ -129,7 +129,7 @@ parseSortMethod :: Parser SortMethod
 parseSortMethod = SortByTitle
   <$> option matchSortMethod ( long "sort-method"
                              <> metavar "SORT-DIRECTION"
-                             <> help "Ascending|Descending")
+                             <> help "ascending|descending")
   where
     matchSortMethod = eitherReader $ \x -> case toLower <$> x of
       "ascending"  -> Right Ascending
