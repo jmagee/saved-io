@@ -46,7 +46,7 @@ Available options:
   --limit N                Limit to N results
   -s,--sort                Sort output
   --sort-method SORT-DIRECTION
-                           Ascending|Descending
+                           ascending|descending
 
 Available commands:
   list                     List bookmark groups
@@ -143,8 +143,7 @@ If you wanted to see only the url, repeated twice for some reason:
 `saved-io list --format url,url`
 
 ### --color
-This option enables color output.  There is not at the moment an option to
-disable this or to control the colors used.
+This option enables color output.  Disable with '--no-color'.
 
 ### --limit
 Limits the number of entries shown.
