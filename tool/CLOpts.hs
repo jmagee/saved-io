@@ -19,6 +19,7 @@ import           Control.Monad       (mzero)
 import           Data.Aeson          (FromJSON, Object, ToJSON, Value (..),
                                       object, (.:?), (.=))
 import qualified Data.Aeson.Types    as A
+import           Data.Char           (toLower, toUpper)
 import           Data.Optional       (Optional (..))
 import           Data.Semigroup      ((<>))
 import           Data.Text           (Text)
@@ -126,9 +127,14 @@ parseOptions common_def =
 -- | Parse the optional sort method.
 parseSortMethod :: Parser SortMethod
 parseSortMethod = SortByTitle
-  <$> option auto ( long "sort-method"
-                  <> metavar "SORT-DIRECTION"
-                  <> help "Ascending|Descending")
+  <$> option matchSortMethod ( long "sort-method"
+                             <> metavar "SORT-DIRECTION"
+                             <> help "Ascending|Descending")
+  where
+    matchSortMethod = eitherReader $ \x -> case toLower <$> x of
+      "ascending"  -> Right Ascending
+      "descending" -> Right Descending
+      _            -> Left $ "cannot parse value '" ++ x ++ "'"
 
 -- | Parse the optional common options and flags.
 parseCommon :: Common -> Parser Common
