@@ -155,25 +155,15 @@ parseCommon (Common dev user format color limit sort _) = Common
                   <> metavar "BMFORMAT"
                   <> help "id,title,url,note,creation")
   <*> toggle color
-                       (flag' True
-                              $  short 'c'
-                              <> long "color"
-                              <> help "Enable color output")
-                       (flag' False
-                              $  short 'b'
-                              <> long "no-color"
-                              <> help "Disable color output")
+    (flag' True  $ short 'c' <> long "color"    <> help "Enable color output")
+    (flag' False $ short 'b' <> long "no-color" <> help "Disable color output")
   <*> pick limit (option auto
                  $  long "limit"
                  <> metavar "N"
                  <> help "Limit to N results")
   <*> toggle sort
-                       (flag' True $  short 's'
-                                   <> long "sort"
-                                   <> help "Sort output")
-                       (flag' False $  short 'n'
-                                    <> long "no-sort"
-                                    <> help "Do not sort output")
+    (flag' True  $ short 's' <> long "sort"    <> help "Sort output")
+    (flag' False $ short 'n' <> long "no-sort" <> help "Do not sort output")
   <*> pick Default parseSortMethod
 
 -- | Parse the listing command.
