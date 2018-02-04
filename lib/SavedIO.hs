@@ -5,50 +5,43 @@
 --
 -- = Usage Example
 -- == Imports/setup used in the examples
+-- >>> :set -XOverloadedStrings
 -- >>> import SavedIO
 -- >>> import Data.Optional (Optional(..))
--- >>> import Data.Time (Day, fromGregorian)
--- >>> let token = "your-api-token"
+-- >>> let token = mkToken "your-dev-key" "your-user-key"
 -- >>> let (<$$>) = fmap . fmap
 -- >>> let (<$$$>) = fmap . fmap . fmap
 --
 -- == Retrieve all bookmarks for an account
--- >>> retrieveBookmarks token Default Default Default Default
+-- >>> retrieveBookmarks token Default Default
 --
 -- == Retrieve bookmarks in group Haskell
--- >>> retrieveBookmarks token Haskell Default Default Default
+-- >>> retrieveBookmarks token "Haskell" Default
 --
--- == Retrieve bookmarks in group Haskell, created between a date range, limit to 10 results.
--- >>> retrieveBookmarks token
---                       (Specific "Haskell")
---                       (Specific (fromGregorian 2016 01 01))
---                       (Specific (fromGregorian (2016 03 01))
---                       (Specific 10)
+-- == Retrieve bookmarks in group Haskell, limit to 10 results.
+-- >>> retrieveBookmarks token "Haskell" 10
 --
 -- == Search for bookmark by title
--- >>> searchBookmarks (Title "Hask") <$$> retrieveBookmarks token Default Default Default Default
+-- >>> searchBookmarks (Title "Hask") <$$> retrieveBookmarks token Default Default
 --
 -- == Search for bookmark by URL
--- >>> searchBookmarks (Url "haskell.org") <$$> retrieveBookmarks token Default Default Default Default
+-- >>> searchBookmarks (Url "haskell.org") <$$> retrieveBookmarks token Default Default
 --
 -- == Search for bookmark by ID
--- >>> searchBookmarks (BID 901210) <$$> retrieveBookmarks token Default Default Default Default
---
--- == Retrive groups
--- >>> retrieveGroups token
+-- >>> searchBookmarks (BID "p6Nm8") <$$> retrieveBookmarks token Default Default
 --
 -- == Add a bookmark
 -- >>> createBookmark token "My Page" "http://www.me.me" Default
 --
 -- == Add a bookmark within a named group
--- >>> createBookmark token "My Page" "http://www.me.me" (Specific "stuff")
+-- >>> createBookmark token "My Page" "http://www.me.me" "stuff"
 --
 -- == Delete a bookmark
--- >>> deleteBookmark token 90210
+-- >>> deleteBookmark token "p6Nm8"
 --
 -- == Pretty print (format) a list of bookmarks
--- >>> ppBookmark (BookmarkConfig (pack "title, url") Nothing) <$$$>
---     retrieveBookmarks token Default Default Default Default
+-- >>> ppBookmark (BookmarkConfig "title,url" Nothing) <$$$>
+--     retrieveBookmarks token Default Default
 {-# LANGUAGE OverloadedStrings #-}
 
 module SavedIO (
@@ -73,7 +66,6 @@ module SavedIO (
 , Query
 , Bookmark(..)
 , BookmarkConfig(..)
-, SavedIOResponse(..)
 
   -- * Pretty Printing Utilities
 , ppSavedIOError
@@ -125,10 +117,11 @@ savedIOHTTP htype body = do
   pure $ responseBody result
 
 -- | Retrieve a list of bookmarks.
-retrieveBookmarks :: Token            -- ^ API Token
-                  -> Optional BMGroup -- ^ Bokmark Group
-                  -> Optional Int     -- ^ Limit
-                  -> IO (Either String [Bookmark])
+retrieveBookmarks :: Token            -- ^ API Token.
+                  -> Optional BMGroup -- ^ Bokmark Group.
+                  -> Optional Int     -- ^ Limit the number of results returned.
+                  -> IO (Either String [Bookmark]) -- ^ Either API error message
+                                                   -- or a list of bookmarks.
 retrieveBookmarks token group limit = do
   let stream = savedIO $ retrieveBookmarksQ token group limit
   d <- (eitherDecode <$> stream) :: IO (Either String [Bookmark])
@@ -137,9 +130,10 @@ retrieveBookmarks token group limit = do
     Right marks -> pure $ Right marks
 
 -- | Retrieve a single bookmark based on the bookmark id.
-getBookmark :: Token -- ^ API Token
-            -> BMId  -- ^ Bookmark id
-            -> IO (Either String Bookmark)
+getBookmark :: Token -- ^ API Token.
+            -> BMId  -- ^ Bookmark id.
+            -> IO (Either String Bookmark) -- ^ Either API error message or a
+                                           -- Bookmark.
 getBookmark token bid = do
   let stream = savedIO $ getBookmarkQ token bid
   d <- (eitherDecode <$> stream) :: IO (Either String Bookmark)
@@ -149,7 +143,7 @@ getBookmark token bid = do
 
 -- | Search bookmarks.
 --
--- This call does retrieves all bookmarks then does a search.  The saved.io
+-- This call retrieves all bookmarks then does a search.  The saved.io
 -- API does not provide a server side search call.
 searchBookmarks :: SearchKey -> [Bookmark] -> [Bookmark]
 searchBookmarks (BID x)      = L.filter $ (x ==) . _id
@@ -159,21 +153,20 @@ searchBookmarks (Note x)     = L.filter $ (pack x `isInfixOf`) . _note
 searchBookmarks (Creation x) = L.filter $ (x ==) . _creation
 
 -- | Create a bookmark entry.
-createBookmark :: Token             -- ^ API Token
-               -> BMTitle           -- ^ Bookmark title
-               -> BMUrl             -- ^ Bookmark URL
-               -> Optional BMGroup  -- ^ Optional Bookmark group
-               -> IO (Either String BMId) -- ^ Either API error message or new BMId
+createBookmark :: Token             -- ^ API Token.
+               -> BMTitle           -- ^ Bookmark title.
+               -> BMUrl             -- ^ Bookmark URL.
+               -> Optional BMGroup  -- ^ Optional Bookmark group.
+               -> IO (Either String BMId) -- ^ Either API error message or new BMId.
 createBookmark token title url group =
   postAction $ createBookmarkQ token title url group
 
 -- | Delete a bookmark.
-deleteBookmark :: Token   -- ^ API token
-               -> BMId    -- ^ Bookmark ID
-               -- | Either API error message or Success flag
-               -- Note that this call returns success even if it
-               -- did not actually delete anything.
-               -> IO String
+deleteBookmark :: Token   -- ^ API token.
+               -> BMId    -- ^ Bookmark ID.
+               -> IO String  -- ^ Either API error message or Success flag.
+                             -- Note that this call returns success even if it
+                             -- did not actually delete anything.
 deleteBookmark token bkid =
   deleteAction $ deleteBookmarkQ token bkid
 

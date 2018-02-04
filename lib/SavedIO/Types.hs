@@ -62,7 +62,7 @@ mkToken = Token
 -- that terminology is a bit overloaded.
 type BMGroup        = String
 
--- | The bookmark format.  This is simply a string that will be matchd
+-- | The bookmark format.  This is simply a string that will be matched
 -- for the keywords:
 --
 --   * id
@@ -130,9 +130,9 @@ defBookmarkConfig :: BookmarkConfig
 defBookmarkConfig = BookmarkConfig defBookKeys Nothing
 
 -- | Pretty print a saved.io bookmark.
-ppBookmark :: BookmarkConfig  -- ^ Pretty printer configuration for bookmarks
-           -> Bookmark        -- ^ The bookmark to print
-           -> Text            -- ^ The formatted result.-}
+ppBookmark :: BookmarkConfig  -- ^ Pretty printer configuration for bookmarks.
+           -> Bookmark        -- ^ The bookmark to print.
+           -> Text            -- ^ The formatted result.
 ppBookmark (BookmarkConfig k scheme)
            (Bookmark theID theURL theTitle theNote theCreation)
   = T.concat . newlineate $ prettyField <$> T.splitOn "," k
@@ -162,8 +162,7 @@ colorize (Just scheme) key text =
         endColor     = T.pack $ CS.setSGRCode [CS.Reset]
 
 -- | A response object from saved.io.  This is returned on errors.
--- The response may have an optional
--- data payload as well, but we ignore it.
+-- The response may have an optional data payload as well, but we ignore it.
 --
 -- The ignored data payload is usually either empty or contains a copy
 -- of the content just POSTed.
