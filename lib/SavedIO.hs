@@ -81,7 +81,7 @@ module SavedIO (
 import           SavedIO.Internal
 import           SavedIO.Types
 
-import           Data.Aeson                 (eitherDecode)
+import           Data.Aeson                 (FromJSON, eitherDecode)
 import qualified Data.ByteString.Lazy       as B
 import qualified Data.ByteString.Lazy.Char8 as BP
 import qualified Data.List                  as L
@@ -122,24 +122,15 @@ retrieveBookmarks :: Token            -- ^ API Token.
                   -> Optional Int     -- ^ Limit the number of results returned.
                   -> IO (Either String [Bookmark]) -- ^ Either API error message
                                                    -- or a list of bookmarks.
-retrieveBookmarks token group limit = do
-  let stream = savedIO $ retrieveBookmarksQ token group limit
-  d <- (eitherDecode <$> stream) :: IO (Either String [Bookmark])
-  case d of
-    Left err    -> fmap Left (handleDecodeError stream err)
-    Right marks -> pure $ Right marks
+retrieveBookmarks token group limit =
+  getAction $ retrieveBookmarksQ token group limit
 
 -- | Retrieve a single bookmark based on the bookmark id.
 getBookmark :: Token -- ^ API Token.
             -> BMId  -- ^ Bookmark id.
             -> IO (Either String Bookmark) -- ^ Either API error message or a
                                            -- Bookmark.
-getBookmark token bid = do
-  let stream = savedIO $ getBookmarkQ token bid
-  d <- (eitherDecode <$> stream) :: IO (Either String Bookmark)
-  case d of
-    Left err    -> fmap Left (handleDecodeError stream err)
-    Right marks -> pure $ Right marks
+getBookmark token bid = getAction $ getBookmarkQ token bid
 
 -- | Search bookmarks.
 --
@@ -170,6 +161,14 @@ deleteBookmark :: Token   -- ^ API token.
 deleteBookmark token bkid =
   deleteAction $ deleteBookmarkQ token bkid
 
+-- | Perform a url GET action, and check for API failure.
+getAction :: FromJSON a => String -> IO (Either String a)
+getAction query = process <$> savedIO query
+  where
+    process stream = either (Left . handleDecodeError stream)
+                     Right
+                     (eitherDecode stream)
+
 -- | Perform a url POST action, and check for API failure.
 postAction :: String -> IO (Either String BMId)
 postAction qString =
@@ -187,9 +186,10 @@ deleteAction b = BP.unpack <$> savedIOHTTP methodDelete b
 -- | Redecode the stream as an SavedIOResponse to see if there was an API error.
 -- This will either return the API error, if it can be obtained, or
 -- the generic aeson parse error.
-handleDecodeError :: IO B.ByteString -> String -> IO String
-handleDecodeError stream errors = do
-  d <- (eitherDecode <$> stream) :: IO (Either String SavedIOResponse)
-  case d of
-    Left  unknown   -> pure $ "Unknown errors occured: " ++ errors ++ " " ++ unknown
-    Right helpful   -> pure $ unpack $ ppSavedIOError helpful
+handleDecodeError :: B.ByteString -> String -> String
+handleDecodeError stream errors =
+  either (unknown errors) helpful
+         (eitherDecode stream :: Either String SavedIOResponse)
+  where
+    unknown e1 e2 = "Unknown errors occured: " ++ e1 ++ ", " ++ e2
+    helpful = unpack . ppSavedIOError
