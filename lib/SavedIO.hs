@@ -50,6 +50,7 @@ module SavedIO (
 , getBookmark
 , searchBookmarks
 , createBookmark
+, createBookmark'
 , deleteBookmark
 
   -- * Token creation
@@ -81,6 +82,7 @@ module SavedIO (
 import           SavedIO.Internal
 import           SavedIO.Types
 
+import           Control.Monad              (void)
 import           Data.Aeson                 (FromJSON, eitherDecode)
 import qualified Data.ByteString.Lazy       as B
 import qualified Data.ByteString.Lazy.Char8 as BP
@@ -144,6 +146,11 @@ searchBookmarks (Note x)     = L.filter $ (pack x `isInfixOf`) . _note
 searchBookmarks (Creation x) = L.filter $ (x ==) . _creation
 
 -- | Create a bookmark entry.
+-- This returns a 'BMId' instead of a full bookmark, primarily due to limitations
+-- in the remote API.  Specifically, the API returns only a partial
+-- bookmark entry on this call.
+--
+-- For a version that returns the complete bookmark, see createBookmark'.
 createBookmark :: Token             -- ^ API Token.
                -> BMTitle           -- ^ Bookmark title.
                -> BMUrl             -- ^ Bookmark URL.
@@ -152,14 +159,29 @@ createBookmark :: Token             -- ^ API Token.
 createBookmark token title url group =
   postAction $ createBookmarkQ token title url group
 
+-- | Create a bookmark entry.
+-- This returns a full bookmark entry.  Note that this call will incur two
+-- remote API calls.  It is equivalent to calling createBookmark followed by
+-- getBookmark.
+createBookmark' :: Token             -- ^ API Token.
+                -> BMTitle           -- ^ Bookmark title.
+                -> BMUrl             -- ^ Bookmark URL.
+                -> Optional BMGroup  -- ^ Optional Bookmark group.
+                -> IO (Either String Bookmark) -- ^ Either API error message or new Bookmark.
+createBookmark' token title url group = do
+  b <- postAction $ createBookmarkQ token title url group
+  either propagateLeft (getBookmark token) b
+  where
+    propagateLeft = pure . Left 
+
 -- | Delete a bookmark.
+-- This call does not provide any indication if the delete was succesfull or not.
+-- For a version that does, see deleteBookmark'.
 deleteBookmark :: Token   -- ^ API token.
                -> BMId    -- ^ Bookmark ID.
-               -> IO String  -- ^ Either API error message or Success flag.
-                             -- Note that this call returns success even if it
-                             -- did not actually delete anything.
+               -> IO ()
 deleteBookmark token bkid =
-  deleteAction $ deleteBookmarkQ token bkid
+  void $ deleteAction $ deleteBookmarkQ token bkid
 
 -- | Perform a url GET action, and check for API failure.
 getAction :: FromJSON a => String -> IO (Either String a)
@@ -172,12 +194,9 @@ getAction query = process <$> savedIO query
 -- | Perform a url POST action, and check for API failure.
 postAction :: String -> IO (Either String BMId)
 postAction qString =
-  boolify <$> ((eitherDecode <$> stream) :: IO (Either String Bookmark))
-    where
-      stream = savedIOHTTP methodPost qString
-      boolify :: Either String Bookmark -> Either String BMId
-      boolify (Left x)  = Left x
-      boolify (Right (Bookmark x _ _ _ _)) = Right x
+  fmap _id <$> ((eitherDecode <$> stream) :: IO (Either String Bookmark))
+  where
+    stream = savedIOHTTP methodPost qString
 
 -- | Perform a url DELETE action, and check for API failure.
 deleteAction :: String -> IO String

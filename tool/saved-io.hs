@@ -72,8 +72,9 @@ run (CL.Options c@(Common dev user format color limit sort sortMethod) cmd) =
                                                     x))
 
     AddMark title url group   -> token
-      >>= \t -> createBookmark t title url group
-      >>= executeIf (\x -> putStrLn $ "Success!  Created: " ++ x)
+      >>= \t -> createBookmark' t title url group
+      >>= executeIf (\x -> putStrLn "Success!  Created: "
+                        >> (T.putStrLn . ppMarkFull) x)
 
     DelMark bkid              -> token
       >>= \t -> deleteBookmark t bkid >>= \_ -> pure ()
@@ -90,6 +91,7 @@ run (CL.Options c@(Common dev user format color limit sort sortMethod) cmd) =
       formatText = perhaps defBookKeys T.pack
       useColor = perhaps Nothing (\x -> x ? Just defBookColors $ Nothing) color
       ppMarkDef = ppBookmark $ BookmarkConfig (formatText format) useColor
+      ppMarkFull = ppBookmark $ BookmarkConfig "id,title,url,note,creation" useColor
       sortIf (Specific True) m x = sortMarks m x
       sortIf _ _ x               = x
       checkToken Default         = die $ "Missing keys; -d|--devkey" ++
