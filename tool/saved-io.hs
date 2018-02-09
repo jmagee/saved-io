@@ -77,7 +77,7 @@ run (CL.Options c@(Common dev user format color limit sort sortMethod) cmd) =
                         >> (T.putStrLn . ppMarkFull) x)
 
     DelMark bkid              -> token
-      >>= \t -> deleteBookmark t bkid >>= \_ -> pure ()
+      >>= \t -> deleteBookmark' t bkid >>= executeIf (\_ -> pure ())
 
     GetMark bkid              -> token
       >>= \t -> getBookmark t bkid >>= executeIf (T.putStrLn . ppMarkDef)

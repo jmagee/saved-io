@@ -52,6 +52,7 @@ module SavedIO (
 , createBookmark
 , createBookmark'
 , deleteBookmark
+, deleteBookmark'
 
   -- * Token creation
 , mkToken
@@ -172,7 +173,7 @@ createBookmark' token title url group = do
   b <- postAction $ createBookmarkQ token title url group
   either propagateLeft (getBookmark token) b
   where
-    propagateLeft = pure . Left 
+    propagateLeft = pure . Left
 
 -- | Delete a bookmark.
 -- This call does not provide any indication if the delete was succesfull or not.
@@ -182,6 +183,26 @@ deleteBookmark :: Token   -- ^ API token.
                -> IO ()
 deleteBookmark token bkid =
   void $ deleteAction $ deleteBookmarkQ token bkid
+
+-- | Delete a bookmark.
+-- This version will return a Left value upon error.
+deleteBookmark' :: Token   -- ^ API token.
+                -> BMId    -- ^ Bookmark ID.
+                -> IO (Either String ())
+deleteBookmark' token bkid = do
+  existsBefore <- markExists token bkid
+  if not existsBefore
+    then pLeft $ "Bookmark " ++ bkid ++ " does not exist."
+    else do
+      deleteBookmark token bkid
+      existsAfter <- markExists token bkid
+      if existsAfter
+        then pLeft "Bookmark was not deleted."
+        else pRight ()
+  where
+    pLeft = pure . Left
+    pRight = pure . Right
+    markExists token bkid = either (const False) (const True) <$> getBookmark token bkid
 
 -- | Perform a url GET action, and check for API failure.
 getAction :: FromJSON a => String -> IO (Either String a)
