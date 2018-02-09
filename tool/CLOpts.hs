@@ -114,7 +114,7 @@ pick :: Alternative f => Optional a -> f a -> f (Optional a)
 pick def x = perhaps checkOptsNoDef checkOptsWithDef def
   where
     checkOptsNoDef     = Specific <$> (last <$> some x) <|> pure Default
-    checkOptsWithDef d = Specific <$> lastWins d <$> many x
+    checkOptsWithDef d = Specific . lastWins d <$> many x
 
 -- | Full command line option format.
 data Options = Options Common Command deriving (Show)

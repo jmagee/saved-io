@@ -89,7 +89,7 @@ import qualified Data.ByteString.Lazy       as B
 import qualified Data.ByteString.Lazy.Char8 as BP
 import qualified Data.List                  as L
 import           Data.Optional              (Optional (..))
-import           Data.Text                  hiding (foldl, foldr, group)
+import           Data.Text                  hiding (group)
 import           Network.HTTP.Client        (defaultManagerSettings)
 import           Network.HTTP.Conduit       (RequestBody (..), httpLbs, method,
                                              newManager, parseRequest,
@@ -202,7 +202,7 @@ deleteBookmark' token bkid = do
   where
     pLeft = pure . Left
     pRight = pure . Right
-    markExists token bkid = either (const False) (const True) <$> getBookmark token bkid
+    markExists t b = either (const False) (const True) <$> getBookmark t b
 
 -- | Perform a url GET action, and check for API failure.
 getAction :: FromJSON a => String -> IO (Either String a)

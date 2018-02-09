@@ -99,7 +99,7 @@ instance FromJSON Bookmark where
              <*> v .: "bk_url"
              <*> v .: "bk_title"
              <*> (fromMaybe "" <$> v .:? "bk_note")
-             <*> (dateFromString <$> fromMaybe "" <$> v .:? "bk_date")
+             <*> (dateFromString . fromMaybe "" <$> v .:? "bk_date")
   parseJSON _ = mzero
 
 -- | Color scheme pair to match a key to a color.
