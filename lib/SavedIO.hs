@@ -151,7 +151,7 @@ searchBookmarks (Creation x) = L.filter $ (x ==) . _creation
 -- in the remote API.  Specifically, the API returns only a partial
 -- bookmark entry on this call.
 --
--- For a version that returns the complete bookmark, see createBookmark'.
+-- For a version that returns the complete bookmark, see 'createBookmark''.
 createBookmark :: Token             -- ^ API Token.
                -> BMTitle           -- ^ Bookmark title.
                -> BMUrl             -- ^ Bookmark URL.
@@ -162,8 +162,8 @@ createBookmark token title url group =
 
 -- | Create a bookmark entry.
 -- This returns a full bookmark entry.  Note that this call will incur two
--- remote API calls.  It is equivalent to calling createBookmark followed by
--- getBookmark.
+-- remote API calls.  It is equivalent to calling 'createBookmark' followed by
+-- 'getBookmark'.
 createBookmark' :: Token             -- ^ API Token.
                 -> BMTitle           -- ^ Bookmark title.
                 -> BMUrl             -- ^ Bookmark URL.
@@ -177,7 +177,7 @@ createBookmark' token title url group = do
 
 -- | Delete a bookmark.
 -- This call does not provide any indication if the delete was succesfull or not.
--- For a version that does, see deleteBookmark'.
+-- For a version that does, see 'deleteBookmark''.
 deleteBookmark :: Token   -- ^ API token.
                -> BMId    -- ^ Bookmark ID.
                -> IO ()
@@ -186,6 +186,12 @@ deleteBookmark token bkid =
 
 -- | Delete a bookmark.
 -- This version will return a Left value upon error.
+--
+-- Note that this function will result in up to three remote API calls:
+--
+--  (1) Check if the mark exists.
+--  (2) Delete the mark.
+--  (3) Confirm that that mark is deleted.
 deleteBookmark' :: Token   -- ^ API token.
                 -> BMId    -- ^ Bookmark ID.
                 -> IO (Either String ())
