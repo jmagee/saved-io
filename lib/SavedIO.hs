@@ -70,7 +70,6 @@ module SavedIO (
 , BookmarkConfig(..)
 
   -- * Pretty Printing Utilities
-, ppSavedIOError
 , defBookColors
 , defBookKeys
 , defBookmarkConfig
@@ -228,13 +227,9 @@ getAction query = process <$> savedIO query
 -- | Perform a url POST action, and check for API failure.
 postAction :: String -> IO (Either SavedIOError BMId)
 postAction qString =
-  --s <- stream
-  -- fmap _id <$> ((eitherDecode <$> stream) :: IO (Either String Bookmark))
-  --pure $ either (Left . exceptionFromString) (Right . _id) ((eitherDecode s) :: Either String Bookmark)
   either (Left . exceptionFromString)
          (Right . _id)
          <$> ((eitherDecode <$> stream) :: IO (Either String Bookmark))
-  -- fmap _id <$> ((eitherDecode <$> stream) :: IO (Either String Bookmark))
   where
     stream = savedIOHTTP methodPost qString
 
@@ -248,7 +243,7 @@ deleteAction b = BP.unpack <$> savedIOHTTP methodDelete b
 -- wrapping warnings and some potentially unpredictable JSON.
 --
 -- Rather than try to make heads or tails of this, just raised a decoding error
--- with the content of the raw remote stream.  We could also return the 
+-- with the content of the raw remote stream.  We could also return the
 -- error from the failed JSON decode, but its likely to be useless so we
 -- just ignore it for now.
 handleDecodeError :: B.ByteString -> String -> SavedIOError

@@ -10,7 +10,6 @@ module SavedIO.Types (
 , Query
 , Bookmark (..)
 , BookmarkConfig (..)
-, SavedIOResponse (..)
 , SearchKey (..)
 , BMTitle
 , BMUrl
@@ -24,7 +23,6 @@ module SavedIO.Types (
 , defBookKeys
 , defBookmarkConfig
 , ppBookmark
-, ppSavedIOError
 
   -- * Search Utility
 , extractSearchKey
@@ -167,26 +165,6 @@ colorize (Just scheme) key text =
     (Just color)  -> foldl T.append (startColor color) [text, endColor]
   where startColor c = T.pack $ CS.setSGRCode [CS.SetColor CS.Foreground CS.Vivid c]
         endColor     = T.pack $ CS.setSGRCode [CS.Reset]
-
--- | A response object from saved.io.  This is returned on errors.
--- The response may have an optional data payload as well, but we ignore it.
---
--- The ignored data payload is usually either empty or contains a copy
--- of the content just POSTed.
-data SavedIOResponse =
-  SavedIOResponse { isError  :: Bool
-                  , message  :: Text
-                  } deriving (Show)
-
-instance FromJSON SavedIOResponse where
-  parseJSON (Object v) =
-    SavedIOResponse <$> v .: "is_error"
-                    <*> v .: "message"
-  parseJSON _ = mzero
-
--- | Pretty print a SavedIOResponse.
-ppSavedIOError :: SavedIOResponse -> Text
-ppSavedIOError (SavedIOResponse _ msg) = T.append "Saved.io error: " msg
 
 -- | A concrete type for errors returned by the saved.io API.
 data SavedIOError
