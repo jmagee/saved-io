@@ -29,9 +29,16 @@ module SavedIO.Types (
   -- * Search Utility
 , extractSearchKey
 
-  -- * Misc Utility 
+  -- * Misc Utility
 , dateFromString
+
+ -- * FIXME: File in proper place
+, SavedIOError (..)
+, exceptionFromResponse
+, exceptionFromString
 ) where
+
+import           SavedIO.Display
 
 import           Control.Monad       (mzero)
 import           Data.Aeson
@@ -180,6 +187,27 @@ instance FromJSON SavedIOResponse where
 -- | Pretty print a SavedIOResponse.
 ppSavedIOError :: SavedIOResponse -> Text
 ppSavedIOError (SavedIOResponse _ msg) = T.append "Saved.io error: " msg
+
+-- | A concrete type for errors returned by the saved.io API.
+data SavedIOError
+  = UnknownError String
+  | DoesNotExistError String -- ^ The bookmark does not (appear to) exist.
+  | NotDeletedError String   -- ^ The bookmark was not deleted.
+  | DecodeError String       -- ^ Could not decode the response from the server.
+  deriving (Eq, Show)
+
+instance Display SavedIOError where
+  display (UnknownError s)      = "Unknown error: " ++ s
+  display (DoesNotExistError s) = "Bookmark does exist: " ++ s
+  display (NotDeletedError s)   = "Bookmark was not deleted: " ++ s
+  display (DecodeError s)       = "Could not decode remote response: " ++ s
+
+-- | Create a SavedIOError from a SavedIOResponse
+exceptionFromResponse :: SavedIOResponse -> SavedIOError
+exceptionFromResponse (SavedIOResponse _ msg) = UnknownError $ T.unpack msg
+
+exceptionFromString :: String -> SavedIOError
+exceptionFromString = UnknownError
 
 type SearchString = String
 type SearchDay    = Day

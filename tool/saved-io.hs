@@ -108,8 +108,8 @@ warn (Left e)  = putStrLn $ "Warning: " ++ e
 warn _         = pure ()
 
 -- | Execute an IO function on Right, print the error on Left.
-executeIf :: (a -> IO ()) -> Either String a -> IO ()
-executeIf _ (Left err) = putStrLn $ "Error: " ++ err
+executeIf :: (a -> IO ()) -> Either SavedIOError a -> IO ()
+executeIf _ (Left err) = putStrLn $ "Error: " ++ display err
 executeIf f (Right x)  = f x
 
 -- | Sort bookmarks.

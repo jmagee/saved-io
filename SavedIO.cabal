@@ -51,7 +51,11 @@ flag documentation
   default:             False
 
 library
-  exposed-modules:     SavedIO, SavedIO.Types, SavedIO.Util, SavedIO.Internal
+  exposed-modules:     SavedIO,
+                       SavedIO.Internal,
+                       SavedIO.Display
+                       SavedIO.Types,
+                       SavedIO.Util
   build-depends:       aeson >= 0.7.0.6,
                        ansi-terminal,
                        base >=4.8 && <5.0,

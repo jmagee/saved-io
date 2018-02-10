@@ -78,8 +78,15 @@ module SavedIO (
 
   -- * Utilities
 , extractSearchKey
+
+ -- * FIXME: File in proper place
+, SavedIOError (..)
+, display
 ) where
 
+import Debug.Trace
+
+import           SavedIO.Display
 import           SavedIO.Internal
 import           SavedIO.Types
 
@@ -123,7 +130,7 @@ savedIOHTTP htype body = do
 retrieveBookmarks :: Token            -- ^ API Token.
                   -> Optional BMGroup -- ^ Bokmark Group.
                   -> Optional Int     -- ^ Limit the number of results returned.
-                  -> IO (Either String [Bookmark]) -- ^ Either API error message
+                  -> IO (Either SavedIOError [Bookmark]) -- ^ Either API error message
                                                    -- or a list of bookmarks.
 retrieveBookmarks token group limit =
   getAction $ retrieveBookmarksQ token group limit
@@ -131,7 +138,7 @@ retrieveBookmarks token group limit =
 -- | Retrieve a single bookmark based on the bookmark id.
 getBookmark :: Token -- ^ API Token.
             -> BMId  -- ^ Bookmark id.
-            -> IO (Either String Bookmark) -- ^ Either API error message or a
+            -> IO (Either SavedIOError Bookmark) -- ^ Either API error message or a
                                            -- Bookmark.
 getBookmark token bid = getAction $ getBookmarkQ token bid
 
@@ -156,7 +163,7 @@ createBookmark :: Token             -- ^ API Token.
                -> BMTitle           -- ^ Bookmark title.
                -> BMUrl             -- ^ Bookmark URL.
                -> Optional BMGroup  -- ^ Optional Bookmark group.
-               -> IO (Either String BMId) -- ^ Either API error message or new BMId.
+               -> IO (Either SavedIOError BMId) -- ^ Either API error message or new BMId.
 createBookmark token title url group =
   postAction $ createBookmarkQ token title url group
 
@@ -168,7 +175,7 @@ createBookmark' :: Token             -- ^ API Token.
                 -> BMTitle           -- ^ Bookmark title.
                 -> BMUrl             -- ^ Bookmark URL.
                 -> Optional BMGroup  -- ^ Optional Bookmark group.
-                -> IO (Either String Bookmark) -- ^ Either API error message or new Bookmark.
+                -> IO (Either SavedIOError Bookmark) -- ^ Either API error message or new Bookmark.
 createBookmark' token title url group = do
   b <- postAction $ createBookmarkQ token title url group
   either propagateLeft (getBookmark token) b
@@ -194,16 +201,16 @@ deleteBookmark token bkid =
 --  (3) Confirm that that mark is deleted.
 deleteBookmark' :: Token   -- ^ API token.
                 -> BMId    -- ^ Bookmark ID.
-                -> IO (Either String ())
+                -> IO (Either SavedIOError ())
 deleteBookmark' token bkid = do
   existsBefore <- markExists token bkid
   if not existsBefore
-    then pLeft $ "Bookmark " ++ bkid ++ " does not exist."
+    then pLeft $ DoesNotExistError bkid
     else do
       deleteBookmark token bkid
       existsAfter <- markExists token bkid
       if existsAfter
-        then pLeft "Bookmark was not deleted."
+        then pLeft $ NotDeletedError bkid
         else pRight ()
   where
     pLeft = pure . Left
@@ -211,7 +218,7 @@ deleteBookmark' token bkid = do
     markExists t b = either (const False) (const True) <$> getBookmark t b
 
 -- | Perform a url GET action, and check for API failure.
-getAction :: FromJSON a => String -> IO (Either String a)
+getAction :: FromJSON b => String -> IO (Either SavedIOError b)
 getAction query = process <$> savedIO query
   where
     process stream = either (Left . handleDecodeError stream)
@@ -219,9 +226,15 @@ getAction query = process <$> savedIO query
                      (eitherDecode stream)
 
 -- | Perform a url POST action, and check for API failure.
-postAction :: String -> IO (Either String BMId)
+postAction :: String -> IO (Either SavedIOError BMId)
 postAction qString =
-  fmap _id <$> ((eitherDecode <$> stream) :: IO (Either String Bookmark))
+  --s <- stream
+  -- fmap _id <$> ((eitherDecode <$> stream) :: IO (Either String Bookmark))
+  --pure $ either (Left . exceptionFromString) (Right . _id) ((eitherDecode s) :: Either String Bookmark)
+  either (Left . exceptionFromString)
+         (Right . _id)
+         <$> ((eitherDecode <$> stream) :: IO (Either String Bookmark))
+  -- fmap _id <$> ((eitherDecode <$> stream) :: IO (Either String Bookmark))
   where
     stream = savedIOHTTP methodPost qString
 
@@ -229,13 +242,14 @@ postAction qString =
 deleteAction :: String -> IO String
 deleteAction b = BP.unpack <$> savedIOHTTP methodDelete b
 
--- | Redecode the stream as an SavedIOResponse to see if there was an API error.
--- This will either return the API error, if it can be obtained, or
--- the generic aeson parse error.
-handleDecodeError :: B.ByteString -> String -> String
-handleDecodeError stream errors =
-  either (unknown errors) helpful
-         (eitherDecode stream :: Either String SavedIOResponse)
-  where
-    unknown e1 e2 = "Unknown errors occured: " ++ e1 ++ ", " ++ e2
-    helpful = unpack . ppSavedIOError
+-- | Construct a decode error with the content message from the remote.
+-- The decoding of the server response failed.  v1 of the API would return
+-- a well structured JSON response, but v2 returns a combination of HTML texts
+-- wrapping warnings and some potentially unpredictable JSON.
+--
+-- Rather than try to make heads or tails of this, just raised a decoding error
+-- with the content of the raw remote stream.  We could also return the 
+-- error from the failed JSON decode, but its likely to be useless so we
+-- just ignore it for now.
+handleDecodeError :: B.ByteString -> String -> SavedIOError
+handleDecodeError = const . DecodeError . BP.unpack
