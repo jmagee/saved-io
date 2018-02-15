@@ -52,7 +52,7 @@ flag documentation
 
 library
   exposed-modules:     SavedIO,
-                       SavedIO.Internal,
+                       SavedIO.Query,
                        SavedIO.Display,
                        SavedIO.Exception,
                        SavedIO.Types,

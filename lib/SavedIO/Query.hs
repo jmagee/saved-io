@@ -1,7 +1,7 @@
--- | Internal SavedIO functions.
+-- | SavedIO query munging.
 {-# LANGUAGE OverloadedStrings #-}
 
-module SavedIO.Internal
+module SavedIO.Query
 ( retrieveBookmarksQ
 , getBookmarkQ
 , createBookmarkQ
@@ -75,9 +75,6 @@ deleteBookmarkQ token bkid =
 left >&&< right | T.null right = left
                 | T.null left  = right
                 | otherwise  = left >++< "&" >++< right
-{-left >&&< []    = left-}
-{-[]   >&&< right = right-}
-{-left >&&< right = left `append` "&" `append` right-}
 
 -- | Append an Optional string.
 -- >>> "foo" +?+ Default

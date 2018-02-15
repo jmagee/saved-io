@@ -6,7 +6,7 @@ module SavedIOSpec (
 ) where
 
 import            SavedIO
-import            SavedIO.Internal
+import            SavedIO.Query
 import            SavedIO.Types
 import            SavedIO.Util
 

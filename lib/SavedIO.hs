@@ -89,7 +89,7 @@ import Debug.Trace
 
 import           SavedIO.Display
 import           SavedIO.Exception
-import           SavedIO.Internal
+import           SavedIO.Query
 import           SavedIO.Types
 
 import           Control.Exception         (evaluate, throw, throwIO, tryJust)
