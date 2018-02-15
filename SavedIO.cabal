@@ -65,6 +65,7 @@ library
                        http-client,
                        http-conduit,
                        http-types,
+                       string-conversions,
                        text,
                        time
   other-extensions:    OverloadedStrings

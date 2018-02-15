@@ -32,6 +32,7 @@ module SavedIO.Types (
 
 ) where
 
+import           Data.String.Conversions    (cs)
 import           Control.Monad       (mzero)
 import           Data.Aeson
 import qualified Data.List           as L
@@ -43,7 +44,7 @@ import           Data.Time           (Day, defaultTimeLocale, parseTimeOrError)
 import qualified System.Console.ANSI as CS
 
 -- | Key type for API keys.  Alias of string
-type Key = String
+type Key = Text
 
 -- | The saved.io API Token.
 -- User keys can be generated here: http://saved.io/key
@@ -59,7 +60,7 @@ mkToken = Token
 
 -- | The bookmark group.  saved.io commonly refers to this as a "list", but
 -- that terminology is a bit overloaded.
-type BMGroup        = String
+type BMGroup        = Text
 
 -- | The bookmark format.  This is simply a string that will be matched
 -- for the keywords:
@@ -69,19 +70,19 @@ type BMGroup        = String
 --   * title
 --   * note
 --   * creation
-type BMFormat       = String
+type BMFormat       = Text
 
 -- | Search query; i.e. search string.
-type Query          = String
+type Query          = Text
 
 -- | Bookmark URL.
-type BMUrl          = String
+type BMUrl          = Text
 
 -- | Bookmark title.
-type BMTitle        = String
+type BMTitle        = Text
 
 -- | Bookmark ID. (saved.io's internal identiciation numbers.)
-type BMId           = String
+type BMId           = Text
 
 -- | saved.io Bookmark.
 data Bookmark =
@@ -139,7 +140,7 @@ ppBookmark (BookmarkConfig k scheme)
       newlineate    = fmap $ flip T.append "\n"
       colorize'     = colorize scheme
       prettyField s = case s of
-        "id"        -> T.append "ID: "       $ colorize' "id" $ T.pack theID
+        "id"        -> T.append "ID: "       $ colorize' "id" theID
         "title"     -> T.append "Bookmark: " $ colorize' "title" theTitle
         "url"       -> T.append "URL: "      $ colorize' "url" theURL
         "note"      -> T.append "Note: "     $ colorize' "note" theNote
@@ -160,7 +161,7 @@ colorize (Just scheme) key text =
   where startColor c = T.pack $ CS.setSGRCode [CS.SetColor CS.Foreground CS.Vivid c]
         endColor     = T.pack $ CS.setSGRCode [CS.Reset]
 
-type SearchString = String
+type SearchString = Text
 type SearchDay    = Day
 
 -- | SearchKey encodes "what to search for" and "where to search for it."
@@ -175,20 +176,20 @@ data SearchKey    = BID SearchString       -- ^ Search by ID.
 extractSearchKey:: Optional BMFormat -> Query -> SearchKey
 extractSearchKey Default q = Title q
 extractSearchKey (Specific format) q
-  | "id" `L.isInfixOf` format        = BID q
-  | "url" `L.isInfixOf` format       = Url q
-  | "title" `L.isInfixOf` format     = Title q
-  | "note" `L.isInfixOf` format      = Note q
-  | "creation" `L.isInfixOf` format  = Creation $ convert q
+  | "id" `T.isInfixOf` format        = BID q
+  | "url" `T.isInfixOf` format       = Url q
+  | "title" `T.isInfixOf` format     = Title q
+  | "note" `T.isInfixOf` format      = Note q
+  | "creation" `T.isInfixOf` format  = Creation $ convert q
   | otherwise                        = extractSearchKey Default q
 
 -- | Convert a string to a type with a slightly more elegant error
 -- than plain read.
-convert :: Read a => String -> a
+convert :: Read a => Text -> a
 convert s =
-  case reads s of
+  case (reads . cs) s of
     [(x, "")]  -> x
-    _          -> error $ "Could not convert " ++ s
+    _          -> error $ "Could not convert " ++ cs s
 
 -- | Convert a string into a Day.
 -- We define this instead of using read, because has a friendlier parse.

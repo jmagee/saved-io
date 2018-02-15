@@ -31,7 +31,7 @@ main :: IO ()
 main = hSetEncoding stdout utf8 -- Hack for Windows to avoid "commitBuffer: invalid argument"
      >> getRCDefaults
      >>= execParser . (`withInfo` infoStr) . parseOptions
-     >>= \options -> catchSavedIOException (run options) (putStrLn . display)
+     >>= \options -> catchSavedIOException (run options) (T.putStrLn . display)
   where
     infoStr = "Command Line Interface to saved.io " ++ version
 
@@ -88,7 +88,7 @@ run (CL.Options c@(Common dev user format color limit sort sortMethod) cmd) =
       B.putStrLn $ encodePretty $ toJSON c
 
     where
-      formatText = perhaps defBookKeys T.pack
+      formatText = perhaps defBookKeys id -- T.pack
       useColor = perhaps Nothing (\x -> x ? Just defBookColors $ Nothing) color
       ppMarkDef = ppBookmark $ BookmarkConfig (formatText format) useColor
       ppMarkFull = ppBookmark $ BookmarkConfig "id,title,url,note,creation" useColor

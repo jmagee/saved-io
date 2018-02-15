@@ -11,12 +11,15 @@ module SavedIO.Display
 , display
 ) where
 
+import           Data.String.Conversions (cs)
+import           Data.Text               (Text)
+
 -- | A type class for displaying data
 -- Like show, but intended to be user derived to have better
 -- control of the final string.
 class Show a => Display a where
-  display :: a -> String
-  display = show
+  display :: a -> Text
+  display = cs . show
 
 -- instance Display String where
 --  display x = x

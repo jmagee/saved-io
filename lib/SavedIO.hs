@@ -92,6 +92,7 @@ import           SavedIO.Exception
 import           SavedIO.Internal
 import           SavedIO.Types
 
+import           Data.String.Conversions    (cs)
 import           Control.Exception          (evaluate, throw, throwIO, tryJust)
 import           Control.Monad              (void)
 import           Data.Aeson                 (FromJSON, eitherDecode)
@@ -109,20 +110,20 @@ import           Network.HTTP.Conduit       (RequestBody (..), httpLbs, method,
 import           Network.HTTP.Types.Method  (Method, methodDelete, methodPost)
 
 -- | Base URL for saved io API.
-savedIOURL :: String
+savedIOURL :: Text
 savedIOURL = "http://devapi.saved.io/bookmarks"
 
 -- | Fetch a URL from saved.io.
-savedIO :: String -> IO B.ByteString
-savedIO = rethrowHttpExceptionAsSavedIO . simpleHttp . (++) savedIOURL
+savedIO :: Text -> IO B.ByteString
+savedIO = rethrowHttpExceptionAsSavedIO . simpleHttp . cs . append savedIOURL
 
 -- | Send a POST request to saved.io.
-savedIOHTTP :: Method -> String -> IO B.ByteString
-savedIOHTTP a b = rethrowHttpExceptionAsSavedIO $ go a b
+savedIOHTTP :: Method -> Text -> IO B.ByteString
+savedIOHTTP a b = rethrowHttpExceptionAsSavedIO $ go a (cs b)
   where
     go htype body = do
       manager <- newManager defaultManagerSettings
-      initReq <- parseRequest savedIOURL
+      initReq <- parseRequest $ cs savedIOURL
       let req = initReq { method = htype
                         , requestHeaders = [("Content-Type"
                                            , "application/x-www-form-urlencoded")
@@ -165,9 +166,9 @@ getBookmark' token bid = either (const Nothing) Just
 -- API does not provide a server side search call.
 searchBookmarks :: SearchKey -> [Bookmark] -> [Bookmark]
 searchBookmarks (BID x)      = L.filter $ (x ==) . _id
-searchBookmarks (Url x)      = L.filter $ (pack x `isInfixOf`) . _url
-searchBookmarks (Title x)    = L.filter $ (pack x `isInfixOf`) . _title
-searchBookmarks (Note x)     = L.filter $ (pack x `isInfixOf`) . _note
+searchBookmarks (Url x)      = L.filter $ (cs x `isInfixOf`) . _url
+searchBookmarks (Title x)    = L.filter $ (cs x `isInfixOf`) . _title
+searchBookmarks (Note x)     = L.filter $ (cs x `isInfixOf`) . _note
 searchBookmarks (Creation x) = L.filter $ (x ==) . _creation
 
 -- | Create a bookmark entry.
@@ -220,35 +221,35 @@ deleteBookmark' :: Token   -- ^ API token.
 deleteBookmark' token bkid = do
   existsBefore <- markExists token bkid
   if not existsBefore
-    then throwIO $ DoesNotExistError bkid
+    then throwIO $ DoesNotExistError (cs bkid)
     else do
       deleteBookmark token bkid
       existsAfter <- markExists token bkid
       if existsAfter
-        then throwIO $ NotDeletedError bkid
+        then throwIO $ NotDeletedError (cs bkid)
         else pure ()
   where
     markExists t b = isJust <$> getBookmark' t b
 
 -- | Perform a url GET action, and check for API failure.
-getAction :: FromJSON a => String -> IO a
+getAction :: FromJSON a => Text -> IO a
 getAction query = savedIO query >>= evaluate . decodeAction
 
 -- | Perform a url POST action, and check for API failure.
-postAction :: String -> IO BMId
+postAction :: Text -> IO BMId
 postAction qString = savedIOHTTP methodPost qString
                    >>= evaluate . _id . decodeAction
 
 -- | Decode a JSON stream.
 decodeAction :: FromJSON a => B.ByteString -> a
 decodeAction stream = case eitherDecode stream of
-  Left err -> throwDecodeError $ stream `BP.append` " -> " `BP.append` BP.pack err
+  Left err -> throwDecodeError $ stream `BP.append` " -> " `BP.append` cs err
   Right r  -> r
 
 -- | Throw a decode error.
 throwDecodeError :: B.ByteString -> a
-throwDecodeError = throw . DecodeError . BP.unpack
+throwDecodeError = throw . DecodeError . cs
 
 -- | Perform a url DELETE action, and check for API failure.
-deleteAction :: String -> IO String
-deleteAction b = BP.unpack <$> savedIOHTTP methodDelete b
+deleteAction :: Text -> IO String
+deleteAction b = cs <$> savedIOHTTP methodDelete b
