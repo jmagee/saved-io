@@ -92,22 +92,20 @@ import           SavedIO.Exception
 import           SavedIO.Internal
 import           SavedIO.Types
 
-import           Data.String.Conversions    (cs)
-import           Control.Exception          (evaluate, throw, throwIO, tryJust)
-import           Control.Monad              (void)
-import           Data.Aeson                 (FromJSON, eitherDecode)
-import qualified Data.ByteString.Lazy       as B
-import qualified Data.ByteString.Lazy.Char8 as BP
-import qualified Data.List                  as L
-import           Data.Maybe                 (isJust)
-import           Data.Optional              (Optional (..))
-import           Data.Text                  hiding (group)
-import           Network.HTTP.Client        (defaultManagerSettings)
-import           Network.HTTP.Conduit       (RequestBody (..), httpLbs, method,
-                                             newManager, parseRequest,
-                                             requestBody, requestHeaders,
-                                             responseBody, simpleHttp)
-import           Network.HTTP.Types.Method  (Method, methodDelete, methodPost)
+import           Control.Exception         (evaluate, throw, throwIO, tryJust)
+import           Control.Monad             (void)
+import           Data.Aeson                (FromJSON, eitherDecode)
+import qualified Data.ByteString.Lazy      as B (ByteString, append)
+import           Data.Maybe                (isJust)
+import           Data.Optional             (Optional (..))
+import           Data.String.Conversions   (cs)
+import           Data.Text                 (Text, append, isInfixOf)
+import           Network.HTTP.Client       (defaultManagerSettings)
+import           Network.HTTP.Conduit      (RequestBody (..), httpLbs, method,
+                                            newManager, parseRequest,
+                                            requestBody, requestHeaders,
+                                            responseBody, simpleHttp)
+import           Network.HTTP.Types.Method (Method, methodDelete, methodPost)
 
 -- | Base URL for saved io API.
 savedIOURL :: Text
@@ -128,7 +126,7 @@ savedIOHTTP a b = rethrowHttpExceptionAsSavedIO $ go a (cs b)
                         , requestHeaders = [("Content-Type"
                                            , "application/x-www-form-urlencoded")
                                            ]
-                        , requestBody = RequestBodyLBS $ BP.pack body
+                        , requestBody = RequestBodyLBS body
                         }
       result <- httpLbs req manager
       pure $ responseBody result
@@ -165,11 +163,11 @@ getBookmark' token bid = either (const Nothing) Just
 -- This call retrieves all bookmarks then does a search.  The saved.io
 -- API does not provide a server side search call.
 searchBookmarks :: SearchKey -> [Bookmark] -> [Bookmark]
-searchBookmarks (BID x)      = L.filter $ (x ==) . _id
-searchBookmarks (Url x)      = L.filter $ (cs x `isInfixOf`) . _url
-searchBookmarks (Title x)    = L.filter $ (cs x `isInfixOf`) . _title
-searchBookmarks (Note x)     = L.filter $ (cs x `isInfixOf`) . _note
-searchBookmarks (Creation x) = L.filter $ (x ==) . _creation
+searchBookmarks (BID x)      = filter $ (x ==) . _id
+searchBookmarks (Url x)      = filter $ (cs x `isInfixOf`) . _url
+searchBookmarks (Title x)    = filter $ (cs x `isInfixOf`) . _title
+searchBookmarks (Note x)     = filter $ (cs x `isInfixOf`) . _note
+searchBookmarks (Creation x) = filter $ (x ==) . _creation
 
 -- | Create a bookmark entry.
 -- This returns a 'BMId' instead of a full bookmark, primarily due to limitations
@@ -179,7 +177,7 @@ searchBookmarks (Creation x) = L.filter $ (x ==) . _creation
 -- For a version that returns the complete bookmark, see 'createBookmark''.
 createBookmark :: Token             -- ^ API Token.
                -> BMTitle           -- ^ Bookmark title.
-               -> BMUrl             -- ^ Bookmark URL.
+               -> BMUrl             -- ^ Bookmark URL .
                -> Optional BMGroup  -- ^ Optional Bookmark group.
                -> IO BMId           -- ^ The new BMId.
 createBookmark token title url group =
@@ -243,7 +241,7 @@ postAction qString = savedIOHTTP methodPost qString
 -- | Decode a JSON stream.
 decodeAction :: FromJSON a => B.ByteString -> a
 decodeAction stream = case eitherDecode stream of
-  Left err -> throwDecodeError $ stream `BP.append` " -> " `BP.append` cs err
+  Left err -> throwDecodeError $ stream `B.append` " -> " `B.append` cs err
   Right r  -> r
 
 -- | Throw a decode error.

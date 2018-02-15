@@ -35,12 +35,14 @@ module SavedIO.Types (
 import           SavedIO.Util
 
 import           Control.Monad           (mzero)
-import           Data.Aeson
+import           Data.Aeson              (FromJSON, Value (..), parseJSON, (.:),
+                                          (.:?))
 import           Data.Maybe              (fromMaybe)
 import           Data.Optional           (Optional (..))
 import           Data.String.Conversions (cs)
 import           Data.Text               (Text)
-import qualified Data.Text               as T
+import qualified Data.Text               as T (append, concat, isInfixOf, pack,
+                                               splitOn)
 import           Data.Time               (Day, defaultTimeLocale,
                                           parseTimeOrError)
 import qualified System.Console.ANSI     as CS

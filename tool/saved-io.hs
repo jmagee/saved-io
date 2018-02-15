@@ -10,13 +10,13 @@ import           Version
 
 import           Data.Aeson                 (eitherDecode', toJSON)
 import           Data.Aeson.Encode.Pretty   (encodePretty)
-import qualified Data.ByteString.Lazy.Char8 as B
+import qualified Data.ByteString.Lazy.Char8 as B (putStrLn, readFile)
 import           Data.Function              (on)
 import           Data.List                  (sortBy)
 import           Data.Optional              (Optional (..))
 import           Data.Text                  (Text)
-import qualified Data.Text                  as T
-import qualified Data.Text.IO               as T
+import qualified Data.Text                  as T (intercalate)
+import qualified Data.Text.IO               as T (putStrLn)
 import           System.Directory           (doesFileExist, getHomeDirectory)
 import           System.Exit                (die)
 import           System.FilePath.Posix      (pathSeparator)
@@ -60,27 +60,26 @@ run (CL.Options c@(Common dev user format color limit sort sortMethod) cmd) =
   in case cmd of
     Listing group             -> token
       >>= \t -> retrieveBookmarks t group limit
-      >>= executeIf (\x -> printTextList $ ppMarkDef <$> sortIf sort sortMethod x)
+      >>= \x -> printTextList $ ppMarkDef <$> sortIf sort sortMethod x
 
     Search query searchFormat -> token
       >>= \t -> retrieveBookmarks t Default limit
-      >>= executeIf (\x -> printTextList $ ppMarkDef <$>
-                           sortIf sort
-                                  sortMethod
-                                  (searchBookmarks (extractSearchKey searchFormat
-                                                                     query)
-                                                    x))
+      >>= \x -> printTextList $ ppMarkDef <$>
+                sortIf sort
+                       sortMethod
+                       (searchBookmarks (extractSearchKey searchFormat
+                                                          query)
+                                        x)
 
     AddMark title url group   -> token
       >>= \t -> createBookmark' t title url group
-      >>= executeIf (\x -> putStrLn "Success!  Created: "
-                        >> (T.putStrLn . ppMarkFull) x)
+      >>= \x -> putStrLn "Success!  Created: " >> (T.putStrLn . ppMarkFull) x
 
     DelMark bkid              -> token
-      >>= \t -> deleteBookmark' t bkid >>= executeIf (\_ -> pure ())
+      >>= \t -> deleteBookmark' t bkid
 
     GetMark bkid              -> token
-      >>= \t -> getBookmark t bkid >>= executeIf (T.putStrLn . ppMarkDef)
+      >>= \t -> getBookmark t bkid >>= T.putStrLn . ppMarkDef
 
     MakeRC                    -> do
       rc <- rcFile
@@ -88,7 +87,7 @@ run (CL.Options c@(Common dev user format color limit sort sortMethod) cmd) =
       B.putStrLn $ encodePretty $ toJSON c
 
     where
-      formatText = perhaps defBookKeys id -- T.pack
+      formatText = perhaps defBookKeys id
       useColor = perhaps Nothing (\x -> x ? Just defBookColors $ Nothing) color
       ppMarkDef = ppBookmark $ BookmarkConfig (formatText format) useColor
       ppMarkFull = ppBookmark $ BookmarkConfig "id,title,url,note,creation" useColor
@@ -106,14 +105,6 @@ printTextList = T.putStrLn . T.intercalate "\n"
 warn :: Either String a -> IO ()
 warn (Left e)  = putStrLn $ "Warning: " ++ e
 warn _         = pure ()
-
--- | Execute an IO function on Right, print the error on Left.
-{-executeIf :: (a -> IO ()) -> Either SavedIOError a -> IO ()-}
-{-executeIf _ (Left err) = putStrLn $ "Error: " ++ display err-}
-{-executeIf f (Right x)  = f x-}
-executeIf :: (a -> IO ()) -> a -> IO ()
--- executeIf _ (Left err) = putStrLn $ "Error: " ++ display err
-executeIf f x  = f x
 
 -- | Sort bookmarks.
 -- If no SortMethod is provided then default to an ascending sort by
