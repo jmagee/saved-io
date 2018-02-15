@@ -23,18 +23,22 @@ import qualified Data.Text               as T (null)
 import           Data.Time               (Day, UTCTime (..), defaultTimeLocale,
                                           formatTime)
 
+-- | Append operator for Text.
+(>++<) :: Text -> Text -> Text
+(>++<) = append
+
 -- | Prepare the query string for retrieveBookmark
 retrieveBookmarksQ :: Token
                    -> Optional BMGroup
                    -> Optional Int
                    -> Text
 retrieveBookmarksQ token group limit =
-  "?" `append` foldl (>&&<) "&"
-                           [ tokenStr token
-                           , pageStr Default -- See NB1.
-                           , limitStr limit
-                           , groupStr group
-                           ]
+  "?" >++< foldl (>&&<) "&"
+                        [ tokenStr token
+                        , pageStr Default -- See NB1.
+                        , limitStr limit
+                        , groupStr group
+                        ]
     where
       limitStr = formatParam "limit=" . (cshow <$>)
       groupStr = formatParam "list=" . (id <$>)
@@ -45,7 +49,7 @@ retrieveBookmarksQ token group limit =
       pageStr  = formatParam "page=" . (cshow <$>)
 
 getBookmarkQ :: Token -> BMId -> Text
-getBookmarkQ token bid = "/" `append` bid `append` "?" `append` tokenStr token
+getBookmarkQ token bid = "/" >++< bid >++< "?" >++< tokenStr token
 
 -- | Prepare the query string for createBookmark
 createBookmarkQ :: Token
@@ -70,7 +74,7 @@ deleteBookmarkQ token bkid =
 (>&&<) :: Text -> Text -> Text
 left >&&< right | T.null right = left
                 | T.null left  = right
-                | otherwise  = left `append` "&" `append` right
+                | otherwise  = left >++< "&" >++< right
 {-left >&&< []    = left-}
 {-[]   >&&< right = right-}
 {-left >&&< right = left `append` "&" `append` right-}
@@ -82,7 +86,7 @@ left >&&< right | T.null right = left
 -- "foobar"
 (+?+) :: Text -> Optional Text -> Text
 s +?+ Default       = s
-s +?+ (Specific s2) = s `append` s2
+s +?+ (Specific s2) = s >++< s2
 
 -- | Convert a Day into epoch time.
 epochTime :: Day -> Text
@@ -94,7 +98,7 @@ epochTime = cs . formatTime defaultTimeLocale "%s" . flip UTCTime 0
 --           formatParam "limit:" Nothint     ->  ""
 formatParam :: Text -> Optional Text -> Text
 formatParam _ Default      = ""
-formatParam s (Specific x) = s `append` x
+formatParam s (Specific x) = s >++< x
 
 -- | Format a token into a URL parameter.
 tokenStr :: Token -> Text
