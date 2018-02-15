@@ -31,7 +31,7 @@ main :: IO ()
 main = hSetEncoding stdout utf8 -- Hack for Windows to avoid "commitBuffer: invalid argument"
      >> getRCDefaults
      >>= execParser . (`withInfo` infoStr) . parseOptions
-     >>= run
+     >>= \options -> catchSavedIOException (run options) (putStrLn . display)
   where
     infoStr = "Command Line Interface to saved.io " ++ version
 
@@ -108,9 +108,12 @@ warn (Left e)  = putStrLn $ "Warning: " ++ e
 warn _         = pure ()
 
 -- | Execute an IO function on Right, print the error on Left.
-executeIf :: (a -> IO ()) -> Either SavedIOError a -> IO ()
-executeIf _ (Left err) = putStrLn $ "Error: " ++ display err
-executeIf f (Right x)  = f x
+{-executeIf :: (a -> IO ()) -> Either SavedIOError a -> IO ()-}
+{-executeIf _ (Left err) = putStrLn $ "Error: " ++ display err-}
+{-executeIf f (Right x)  = f x-}
+executeIf :: (a -> IO ()) -> a -> IO ()
+-- executeIf _ (Left err) = putStrLn $ "Error: " ++ display err
+executeIf f x  = f x
 
 -- | Sort bookmarks.
 -- If no SortMethod is provided then default to an ascending sort by

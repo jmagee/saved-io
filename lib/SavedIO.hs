@@ -48,6 +48,7 @@ module SavedIO (
   -- * saved.io API
   retrieveBookmarks
 , getBookmark
+, getBookmark'
 , searchBookmarks
 , createBookmark
 , createBookmark'
@@ -79,8 +80,9 @@ module SavedIO (
 , extractSearchKey
 
  -- * FIXME: File in proper place
-, SavedIOError (..)
+, SavedIOException (..)
 , display
+, catchSavedIOException
 ) where
 
 import Debug.Trace
@@ -89,19 +91,26 @@ import           SavedIO.Display
 import           SavedIO.Internal
 import           SavedIO.Types
 
+import           Control.Exception          (catch, evaluate, throw, throwIO,
+                                             tryJust)
 import           Control.Monad              (void)
 import           Data.Aeson                 (FromJSON, eitherDecode)
 import qualified Data.ByteString.Lazy       as B
 import qualified Data.ByteString.Lazy.Char8 as BP
 import qualified Data.List                  as L
+import           Data.Maybe                 (isJust)
 import           Data.Optional              (Optional (..))
 import           Data.Text                  hiding (group)
 import           Network.HTTP.Client        (defaultManagerSettings)
-import           Network.HTTP.Conduit       (RequestBody (..), httpLbs, method,
+import           Network.HTTP.Conduit       (HttpException (..),
+                                             HttpExceptionContent (..),
+                                             RequestBody (..), httpLbs, method,
                                              newManager, parseRequest,
                                              requestBody, requestHeaders,
-                                             responseBody, simpleHttp)
+                                             responseBody, responseStatus,
+                                             simpleHttp)
 import           Network.HTTP.Types.Method  (Method, methodDelete, methodPost)
+import           Network.HTTP.Types.Status  (status403, status404)
 
 -- | Base URL for saved io API.
 savedIOURL :: String
@@ -109,37 +118,76 @@ savedIOURL = "http://devapi.saved.io/bookmarks"
 
 -- | Fetch a URL from saved.io.
 savedIO :: String -> IO B.ByteString
-savedIO = simpleHttp . (++) savedIOURL
+savedIO = rethrowHttpExceptionAsSavedIO . simpleHttp . (++) savedIOURL
 
 -- | Send a POST request to saved.io.
 savedIOHTTP :: Method -> String -> IO B.ByteString
-savedIOHTTP htype body = do
-  manager <- newManager defaultManagerSettings
-  initReq <- parseRequest savedIOURL
-  let req = initReq { method = htype
-                    , requestHeaders = [("Content-Type"
-                                       , "application/x-www-form-urlencoded")
-                                       ]
-                    , requestBody = RequestBodyLBS $ BP.pack body
-                    }
-  result <- httpLbs req manager
-  pure $ responseBody result
+savedIOHTTP a b = rethrowHttpExceptionAsSavedIO $ go a b
+  where
+    go htype body = do
+      manager <- newManager defaultManagerSettings
+      initReq <- parseRequest savedIOURL
+      let req = initReq { method = htype
+                        , requestHeaders = [("Content-Type"
+                                           , "application/x-www-form-urlencoded")
+                                           ]
+                        , requestBody = RequestBodyLBS $ BP.pack body
+                        }
+      result <- httpLbs req manager
+      pure $ responseBody result
 
 -- | Retrieve a list of bookmarks.
 retrieveBookmarks :: Token            -- ^ API Token.
                   -> Optional BMGroup -- ^ Bokmark Group.
                   -> Optional Int     -- ^ Limit the number of results returned.
-                  -> IO (Either SavedIOError [Bookmark]) -- ^ Either API error message
-                                                   -- or a list of bookmarks.
+                  -> IO [Bookmark]    -- ^ A list of bookmarks
 retrieveBookmarks token group limit =
   getAction $ retrieveBookmarksQ token group limit
 
 -- | Retrieve a single bookmark based on the bookmark id.
-getBookmark :: Token -- ^ API Token.
-            -> BMId  -- ^ Bookmark id.
-            -> IO (Either SavedIOError Bookmark) -- ^ Either API error message or a
-                                           -- Bookmark.
+getBookmark :: Token       -- ^ API Token.
+            -> BMId        -- ^ Bookmark id.
+            -> IO Bookmark -- ^ The bookmark
 getBookmark token bid = getAction $ getBookmarkQ token bid
+
+-- | Retrieve a single bookmark based on the bookmark id.
+-- Equvialant to getBookmark, except it checks for exceptions that may
+-- indicate that the bookmark does not exist and returns a Maybe.
+getBookmark' :: Token
+             -> BMId
+             -> IO (Maybe Bookmark)
+getBookmark' token bid = either (const Nothing) Just
+                                <$> tryJust justDecodeError mark
+  where
+    justDecodeError x@(DecodeError _) = Just x
+    justDecodeError _ = Nothing
+    mark = getBookmark token bid
+
+-- | Catch specific 'HttpException's and re-throw them as 'SavedIOException's.
+rethrowHttpExceptionAsSavedIO :: IO a -> IO a
+rethrowHttpExceptionAsSavedIO act = do
+  result <- tryJust justHttpException act
+  case result of
+    Left e  -> 
+      case httpExceptionToSavedIO e of
+        Just x  -> throwIO x
+        Nothing -> throwIO e
+    Right x -> pure x
+  where
+    justHttpException x@(HttpExceptionRequest _ _) = Just x
+    justHttpException _ = Nothing
+
+-- | Convert specific 'HttpException's to 'SavedIOException's.
+httpExceptionToSavedIO :: HttpException -> Maybe SavedIOException
+httpExceptionToSavedIO (HttpExceptionRequest req (StatusCodeException response _)) =
+  responseTo $ responseStatus response
+  where
+    responseTo r | r == status403 = Just $ BadToken (show req)
+                 | r == status404 = Just $ BadURL (show req)
+                 | otherwise      = Nothing
+httpExceptionToSavedIO (HttpExceptionRequest req (ConnectionFailure _)) =
+  Just $ BadURL (show req)
+httpExceptionToSavedIO _ = Nothing
 
 -- | Search bookmarks.
 --
@@ -162,7 +210,7 @@ createBookmark :: Token             -- ^ API Token.
                -> BMTitle           -- ^ Bookmark title.
                -> BMUrl             -- ^ Bookmark URL.
                -> Optional BMGroup  -- ^ Optional Bookmark group.
-               -> IO (Either SavedIOError BMId) -- ^ Either API error message or new BMId.
+               -> IO BMId           -- ^ The new BMId.
 createBookmark token title url group =
   postAction $ createBookmarkQ token title url group
 
@@ -174,12 +222,10 @@ createBookmark' :: Token             -- ^ API Token.
                 -> BMTitle           -- ^ Bookmark title.
                 -> BMUrl             -- ^ Bookmark URL.
                 -> Optional BMGroup  -- ^ Optional Bookmark group.
-                -> IO (Either SavedIOError Bookmark) -- ^ Either API error message or new Bookmark.
+                -> IO Bookmark       -- ^ The new Bookmark.
 createBookmark' token title url group = do
-  b <- postAction $ createBookmarkQ token title url group
-  either propagateLeft (getBookmark token) b
-  where
-    propagateLeft = pure . Left
+  bid <- postAction $ createBookmarkQ token title url group
+  getBookmark token bid
 
 -- | Delete a bookmark.
 -- This call does not provide any indication if the delete was succesfull or not.
@@ -200,51 +246,47 @@ deleteBookmark token bkid =
 --  (3) Confirm that that mark is deleted.
 deleteBookmark' :: Token   -- ^ API token.
                 -> BMId    -- ^ Bookmark ID.
-                -> IO (Either SavedIOError ())
+                -> IO ()
 deleteBookmark' token bkid = do
   existsBefore <- markExists token bkid
   if not existsBefore
-    then pLeft $ DoesNotExistError bkid
+    then throwIO $ DoesNotExistError bkid
     else do
       deleteBookmark token bkid
       existsAfter <- markExists token bkid
       if existsAfter
-        then pLeft $ NotDeletedError bkid
-        else pRight ()
+        then throwIO $ NotDeletedError bkid
+        else pure ()
   where
-    pLeft = pure . Left
-    pRight = pure . Right
-    markExists t b = either (const False) (const True) <$> getBookmark t b
+    markExists t b = isJust <$> getBookmark' t b
 
 -- | Perform a url GET action, and check for API failure.
-getAction :: FromJSON b => String -> IO (Either SavedIOError b)
-getAction query = process <$> savedIO query
-  where
-    process stream = either (Left . handleDecodeError stream)
-                     Right
-                     (eitherDecode stream)
+getAction :: FromJSON a => String -> IO a
+getAction query = savedIO query >>= evaluate . decodeAction
 
 -- | Perform a url POST action, and check for API failure.
-postAction :: String -> IO (Either SavedIOError BMId)
-postAction qString =
-  either (Left . exceptionFromString)
-         (Right . _id)
-         <$> ((eitherDecode <$> stream) :: IO (Either String Bookmark))
-  where
-    stream = savedIOHTTP methodPost qString
+postAction :: String -> IO BMId
+postAction qString = savedIOHTTP methodPost qString
+                   >>= evaluate . _id . decodeAction
+
+-- | Decode a JSON stream.
+decodeAction :: FromJSON a => B.ByteString -> a
+decodeAction stream = case eitherDecode stream of
+  Left err -> throwDecodeError $ stream `BP.append` " -> " `BP.append` BP.pack err
+  Right r  -> r
+
+-- | Throw a decode error.
+throwDecodeError :: B.ByteString -> a
+throwDecodeError = throw . DecodeError . BP.unpack
 
 -- | Perform a url DELETE action, and check for API failure.
 deleteAction :: String -> IO String
 deleteAction b = BP.unpack <$> savedIOHTTP methodDelete b
 
--- | Construct a decode error with the content message from the remote.
--- The decoding of the server response failed.  v1 of the API would return
--- a well structured JSON response, but v2 returns a combination of HTML texts
--- wrapping warnings and some potentially unpredictable JSON.
---
--- Rather than try to make heads or tails of this, just raised a decoding error
--- with the content of the raw remote stream.  We could also return the
--- error from the failed JSON decode, but its likely to be useless so we
--- just ignore it for now.
-handleDecodeError :: B.ByteString -> String -> SavedIOError
-handleDecodeError = const . DecodeError . BP.unpack
+-- | Catch only 'SavedIOException's.
+-- Equivelant to 'Control.Exception.Catch', except the handler can only handle
+-- 'SavedIOException'.
+catchSavedIOException :: IO a                   -- ^ The computation to run
+                      -> (SavedIOException -> IO a) -- ^ The handler
+                      -> IO a
+catchSavedIOException = catch

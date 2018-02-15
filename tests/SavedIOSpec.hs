@@ -23,11 +23,11 @@ instance Arbitrary Token where
 
 spec :: Spec
 spec = do
-  describe "ppSavedIOError" $ do
-    it "prints message with prefix" $
-      ppSavedIOError (SavedIOResponse True "abc 123") `shouldBe` pack "Saved.io error: abc 123"
-    it "prints empty with prefix" $
-      ppSavedIOError (SavedIOResponse False "") `shouldBe` pack "Saved.io error: "
+  {-describe "ppSavedIOError" $ do-}
+    {-it "prints message with prefix" $-}
+      {-ppSavedIOError (SavedIOResponse True "abc 123") `shouldBe` pack "Saved.io error: abc 123"-}
+    {-it "prints empty with prefix" $-}
+      {-ppSavedIOError (SavedIOResponse False "") `shouldBe` pack "Saved.io error: "-}
 
   describe "defBookColors" $
     it "is full of pretty colors" $

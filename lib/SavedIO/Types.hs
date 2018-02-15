@@ -1,5 +1,6 @@
 -- | Types for SavedIO.
 {-# LANGUAGE OverloadedStrings #-}
+-- {-# LANGUAGE DeriveDataTypeable #-}
 
 module SavedIO.Types (
   -- * Exported Types
@@ -31,13 +32,13 @@ module SavedIO.Types (
 , dateFromString
 
  -- * FIXME: File in proper place
-, SavedIOError (..)
-, exceptionFromResponse
+, SavedIOException (..)
 , exceptionFromString
 ) where
 
 import           SavedIO.Display
 
+import           Control.Exception   (Exception)
 import           Control.Monad       (mzero)
 import           Data.Aeson
 import qualified Data.List           as L
@@ -167,24 +168,26 @@ colorize (Just scheme) key text =
         endColor     = T.pack $ CS.setSGRCode [CS.Reset]
 
 -- | A concrete type for errors returned by the saved.io API.
-data SavedIOError
+data SavedIOException
   = UnknownError String
   | DoesNotExistError String -- ^ The bookmark does not (appear to) exist.
   | NotDeletedError String   -- ^ The bookmark was not deleted.
   | DecodeError String       -- ^ Could not decode the response from the server.
+  | BadToken String          -- ^ Bad token (user key and developer key)
+  | BadURL String            -- ^ The saved.io URl is down or incorrect
   deriving (Eq, Show)
 
-instance Display SavedIOError where
+instance Exception SavedIOException
+
+instance Display SavedIOException where
   display (UnknownError s)      = "Unknown error: " ++ s
   display (DoesNotExistError s) = "Bookmark does exist: " ++ s
   display (NotDeletedError s)   = "Bookmark was not deleted: " ++ s
   display (DecodeError s)       = "Could not decode remote response: " ++ s
+  display (BadToken s)          = "Bad user key or developer.  HTTP request was: \n" ++ s
+  display (BadURL s)            = "Bad or unreachable URL.  HTTP request was: \n" ++ s
 
--- | Create a SavedIOError from a SavedIOResponse
-exceptionFromResponse :: SavedIOResponse -> SavedIOError
-exceptionFromResponse (SavedIOResponse _ msg) = UnknownError $ T.unpack msg
-
-exceptionFromString :: String -> SavedIOError
+exceptionFromString :: String -> SavedIOException
 exceptionFromString = UnknownError
 
 type SearchString = String
