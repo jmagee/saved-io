@@ -15,7 +15,6 @@ import           Data.Aeson                 (eitherDecode', toJSON)
 import           Data.Aeson.Encode.Pretty   (encodePretty)
 import qualified Data.ByteString.Lazy.Char8 as B (putStrLn, readFile)
 import           Data.Function              (on)
-import           Data.List                  (sortBy)
 import           Data.Optional              (Optional (..))
 import           Data.Text                  (Text)
 import qualified Data.Text                  as T (intercalate)
@@ -75,11 +74,11 @@ run (CL.Options c@(Common dev user format color limit sort sortMethod) cmd) =
                                         x)
 
     AddMark title url group   -> token
-      >>= \t -> createBookmark' t title url group
+      >>= \t -> createBookmark t title url group
       >>= \x -> putStrLn "Success!  Created: " >> (T.putStrLn . ppMarkFull) x
 
     DelMark bkid              -> token
-      >>= \t -> deleteBookmark' t bkid
+      >>= \t -> deleteBookmark t bkid
 
     GetMark bkid              -> token
       >>= \t -> getBookmark t bkid >>= T.putStrLn . ppMarkDef

@@ -10,7 +10,6 @@
 -- >>> import Data.Optional (Optional(..))
 -- >>> let token = mkToken "your-dev-key" "your-user-key"
 -- >>> let (<$$>) = fmap . fmap
--- >>> let (<$$$>) = fmap . fmap . fmap
 --
 -- == Retrieve all bookmarks for an account
 -- >>> retrieveBookmarks token Default Default
@@ -22,13 +21,13 @@
 -- >>> retrieveBookmarks token "Haskell" 10
 --
 -- == Search for bookmark by title
--- >>> searchBookmarks (Title "Hask") <$$> retrieveBookmarks token Default Default
+-- >>> searchBookmarks (Title "Hask") <$> retrieveBookmarks token Default Default
 --
 -- == Search for bookmark by URL
--- >>> searchBookmarks (Url "haskell.org") <$$> retrieveBookmarks token Default Default
+-- >>> searchBookmarks (Url "haskell.org") <$> retrieveBookmarks token Default Default
 --
 -- == Search for bookmark by ID
--- >>> searchBookmarks (BID "p6Nm8") <$$> retrieveBookmarks token Default Default
+-- >>> searchBookmarks (BID "p6Nm8") <$> retrieveBookmarks token Default Default
 --
 -- == Add a bookmark
 -- >>> createBookmark token "My Page" "http://www.me.me" Default
@@ -40,7 +39,7 @@
 -- >>> deleteBookmark token "p6Nm8"
 --
 -- == Pretty print (format) a list of bookmarks
--- >>> ppBookmark (BookmarkConfig "title,url" Nothing) <$$$>
+-- >>> ppBookmark (BookmarkConfig "title,url" Nothing) <$$>
 --     retrieveBookmarks token Default Default
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -48,7 +47,7 @@ module SavedIO (
   -- * saved.io API
   retrieveBookmarks
 , getBookmark
-, getBookmark'
+, getBookmarkMaybe
 , searchBookmarks
 , createBookmark
 , createBookmark'
@@ -148,13 +147,13 @@ getBookmark :: Token       -- ^ API Token.
 getBookmark token bid = getAction $ getBookmarkQ token bid
 
 -- | Retrieve a single bookmark based on the bookmark id.
--- Equvialant to getBookmark, except it checks for exceptions that may
+-- Equvialant to 'getBookmark', except it checks for exceptions that may
 -- indicate that the bookmark does not exist and returns a Maybe.
-getBookmark' :: Token
-             -> BMId
-             -> IO (Maybe Bookmark)
-getBookmark' token bid = either (const Nothing) Just
-                                <$> tryJust justDecodeError mark
+getBookmarkMaybe :: Token
+                 -> BMId
+                 -> IO (Maybe Bookmark)
+getBookmarkMaybe token bid = either (const Nothing) Just
+                                    <$> tryJust justDecodeError mark
   where
     justDecodeError x@(DecodeError _) = Just x
     justDecodeError _ = Nothing
@@ -176,35 +175,35 @@ searchBookmarks (Creation x) = S.filter $ (x ==) . _creation
 -- in the remote API.  Specifically, the API returns only a partial
 -- bookmark entry on this call.
 --
--- For a version that returns the complete bookmark, see 'createBookmark''.
-createBookmark :: Token             -- ^ API Token.
-               -> BMTitle           -- ^ Bookmark title.
-               -> BMUrl             -- ^ Bookmark URL .
-               -> Optional BMGroup  -- ^ Optional Bookmark group.
-               -> IO BMId           -- ^ The new BMId.
-createBookmark token title url group =
+-- For a version that returns the complete bookmark, see 'createBookmark'.
+createBookmark' :: Token             -- ^ API Token.
+                -> BMTitle           -- ^ Bookmark title.
+                -> BMUrl             -- ^ Bookmark URL .
+                -> Optional BMGroup  -- ^ Optional Bookmark group.
+                -> IO BMId           -- ^ The new BMId.
+createBookmark' token title url group =
   postAction $ createBookmarkQ token title url group
 
 -- | Create a bookmark entry.
 -- This returns a full bookmark entry.  Note that this call will incur two
 -- remote API calls.  It is equivalent to calling 'createBookmark' followed by
 -- 'getBookmark'.
-createBookmark' :: Token             -- ^ API Token.
-                -> BMTitle           -- ^ Bookmark title.
-                -> BMUrl             -- ^ Bookmark URL.
-                -> Optional BMGroup  -- ^ Optional Bookmark group.
-                -> IO Bookmark       -- ^ The new Bookmark.
-createBookmark' token title url group = do
+createBookmark :: Token             -- ^ API Token.
+               -> BMTitle           -- ^ Bookmark title.
+               -> BMUrl             -- ^ Bookmark URL.
+               -> Optional BMGroup  -- ^ Optional Bookmark group.
+               -> IO Bookmark       -- ^ The new Bookmark.
+createBookmark token title url group = do
   bid <- postAction $ createBookmarkQ token title url group
   getBookmark token bid
 
 -- | Delete a bookmark.
 -- This call does not provide any indication if the delete was succesfull or not.
--- For a version that does, see 'deleteBookmark''.
-deleteBookmark :: Token   -- ^ API token.
+-- For a version that does, see 'deleteBookmark'.
+deleteBookmark' :: Token   -- ^ API token.
                -> BMId    -- ^ Bookmark ID.
                -> IO ()
-deleteBookmark token bkid =
+deleteBookmark' token bkid =
   void $ deleteAction $ deleteBookmarkQ token bkid
 
 -- | Delete a bookmark.
@@ -215,21 +214,21 @@ deleteBookmark token bkid =
 --  (1) Check if the mark exists.
 --  (2) Delete the mark.
 --  (3) Confirm that that mark is deleted.
-deleteBookmark' :: Token   -- ^ API token.
+deleteBookmark :: Token   -- ^ API token.
                 -> BMId    -- ^ Bookmark ID.
                 -> IO ()
-deleteBookmark' token bkid = do
+deleteBookmark token bkid = do
   existsBefore <- markExists token bkid
   if not existsBefore
     then throwIO $ DoesNotExistError (cs bkid)
     else do
-      deleteBookmark token bkid
+      deleteBookmark' token bkid
       existsAfter <- markExists token bkid
       if existsAfter
         then throwIO $ NotDeletedError (cs bkid)
         else pure ()
   where
-    markExists t b = isJust <$> getBookmark' t b
+    markExists t b = isJust <$> getBookmarkMaybe t b
 
 -- | Perform a url GET action, and check for API failure.
 getAction :: FromJSON a => Text -> IO a
