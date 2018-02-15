@@ -21,6 +21,9 @@ import           Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
 instance Arbitrary Token where
   arbitrary = Token <$> arbitrary <*> arbitrary
 
+instance Arbitrary Text where
+  arbitrary = pack <$> arbitrary
+
 spec :: Spec
 spec = do
   {-describe "ppSavedIOError" $ do-}
@@ -91,8 +94,8 @@ spec = do
   describe "+?+" $ do
     prop "s +?+ Default == s" $
       \s -> s +?+ Default == s
-    prop "s +?+ (Specific t) == s ++ t" $
-      \s t -> s +?+ Specific t == s ++ t
+    prop "s +?+ (Specific t) == s `append` t" $
+      \s t -> s +?+ Specific t == s `append` t
 
   describe "epochTime" $ do
     it "knows how long since 2016-04-08" $
@@ -109,12 +112,12 @@ spec = do
   describe "formatParam" $ do
     prop "s `formatParam` Default == empty string" $
       \s -> formatParam s Default == ""
-    prop "s `formatParamt` (Specific t) == s ++ t" $
-      \s t -> formatParam s (Specific t) == s ++ t
+    prop "s `formatParamt` (Specific t) == s `append` t" $
+      \s t -> formatParam s (Specific t) == s `append` t
 
   describe "tokenStr" $
     prop "tokenStr s == \"devkey=<x>&key=s\"" $
-      \s -> tokenStr s == "devkey=" ++ _devKey s ++ "&key=" ++ _userKey s
+      \s -> tokenStr s == "devkey=" `append` _devKey s `append` "&key=" `append` _userKey s
 
   describe "if'" $ do
     prop "if' == if-then-else :: Int" $

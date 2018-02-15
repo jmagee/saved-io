@@ -1,5 +1,4 @@
 -- | Exception related types and functions for SavedIO.
-{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module SavedIO.Exception
@@ -10,9 +9,9 @@ module SavedIO.Exception
 ) where
 
 import           SavedIO.Display
+import           SavedIO.Util
 
 import           Control.Exception         (Exception, catch, throwIO, tryJust)
-import           Data.String.Conversions   (ConvertibleStrings, cs)
 import           Data.Text                 (Text, append)
 import           Network.HTTP.Conduit      (HttpException (..),
                                             HttpExceptionContent (..),
@@ -62,10 +61,6 @@ httpExceptionToSavedIO (HttpExceptionRequest req (StatusCodeException response _
 httpExceptionToSavedIO (HttpExceptionRequest req (ConnectionFailure _)) =
   Just $ BadURL (cshow req)
 httpExceptionToSavedIO _ = Nothing
-
--- | Show a type and convert the string.
-cshow :: (Show a, ConvertibleStrings String b) => a -> b
-cshow = cs . show
 
 -- | Catch only 'SavedIOException's.
 -- Equivalent to 'Control.Exception.Catch', except the handler can only handle

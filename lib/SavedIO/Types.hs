@@ -32,16 +32,18 @@ module SavedIO.Types (
 
 ) where
 
-import           Data.String.Conversions    (cs)
-import           Control.Monad       (mzero)
+import           SavedIO.Util
+
+import           Control.Monad           (mzero)
 import           Data.Aeson
-import qualified Data.List           as L
-import           Data.Maybe          (fromMaybe)
-import           Data.Optional       (Optional (..))
-import           Data.Text           (Text)
-import qualified Data.Text           as T
-import           Data.Time           (Day, defaultTimeLocale, parseTimeOrError)
-import qualified System.Console.ANSI as CS
+import           Data.Maybe              (fromMaybe)
+import           Data.Optional           (Optional (..))
+import           Data.String.Conversions (cs)
+import           Data.Text               (Text)
+import qualified Data.Text               as T
+import           Data.Time               (Day, defaultTimeLocale,
+                                          parseTimeOrError)
+import qualified System.Console.ANSI     as CS
 
 -- | Key type for API keys.  Alias of string
 type Key = Text
@@ -144,12 +146,8 @@ ppBookmark (BookmarkConfig k scheme)
         "title"     -> T.append "Bookmark: " $ colorize' "title" theTitle
         "url"       -> T.append "URL: "      $ colorize' "url" theURL
         "note"      -> T.append "Note: "     $ colorize' "note" theNote
-        "creation"  -> T.append "Created: "  $ colorize' "creation" $ tshow theCreation
+        "creation"  -> T.append "Created: "  $ colorize' "creation" $ cshow theCreation
         e@_         -> T.append "unrecognized format " e
-
--- Show for Text
-tshow :: Show a => a -> Text
-tshow = T.pack . show
 
 -- Colorize it!
 colorize :: Maybe ColorScheme -> String -> Text -> Text

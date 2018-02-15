@@ -14,6 +14,7 @@ module SavedIO.Internal
 ) where
 
 import           SavedIO.Types
+import           SavedIO.Util
 
 import           Data.Optional           (Optional (..))
 import           Data.String.Conversions (cs)
@@ -35,13 +36,13 @@ retrieveBookmarksQ token group limit =
                            , groupStr group
                            ]
     where
-      limitStr = formatParam "limit=" . ((cs . show) <$>)
+      limitStr = formatParam "limit=" . (cshow <$>)
       groupStr = formatParam "list=" . (id <$>)
       -- NB1: We may consider exposing the page option in our API
       -- later, but for now we just fall back to the upstream default (1).
       -- My testing could not find any noticeable effect of this option.
       pageStr :: Optional Int -> Text
-      pageStr  = formatParam "page=" . ((cs . show) <$>)
+      pageStr  = formatParam "page=" . (cshow <$>)
 
 getBookmarkQ :: Token -> BMId -> Text
 getBookmarkQ token bid = "/" `append` bid `append` "?" `append` tokenStr token

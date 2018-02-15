@@ -1,14 +1,17 @@
 -- | Various utilities to support SavedIO.
+{-# LANGUAGE FlexibleContexts  #-}
 
 module SavedIO.Util
 ( if'
 , (?)
+, cshow
 , optional
 , perhaps
 ) where
 
-import            Control.Applicative             (Alternative, (<|>))
-import            Data.Optional                   (Optional(..))
+import           Control.Applicative     (Alternative, (<|>))
+import           Data.Optional           (Optional (..))
+import           Data.String.Conversions (ConvertibleStrings, cs)
 
 -- | Functional alternative to if-then-else.
 -- See https://wiki.haskell.org/If-then-else
@@ -36,3 +39,7 @@ optional v = Specific <$> v <|> pure Default
 perhaps :: b -> (a -> b) -> Optional a -> b
 perhaps def _ Default      = def
 perhaps _   f (Specific x) = f x
+
+-- | Show a type and convert the string.
+cshow :: (Show a, ConvertibleStrings String b) => a -> b
+cshow = cs . show
