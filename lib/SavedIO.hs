@@ -101,11 +101,10 @@ import           Data.Sequence             (Seq)
 import qualified Data.Sequence             as S (filter)
 import           Data.String.Conversions   (cs)
 import           Data.Text                 (Text, append, isInfixOf)
-import           Network.HTTP.Client       (defaultManagerSettings)
-import           Network.HTTP.Conduit      (RequestBody (..), httpLbs, method,
-                                            newManager, parseRequest,
-                                            requestBody, requestHeaders,
-                                            responseBody, simpleHttp)
+import           Network.HTTP.Conduit      (RequestBody (..), method,
+                                            requestBody, requestHeaders)
+import           Network.HTTP.Simple       (getResponseBody, httpLBS,
+                                            parseRequest)
 import           Network.HTTP.Types.Method (Method, methodDelete, methodPost)
 
 -- | Base URL for saved io API.
@@ -114,23 +113,25 @@ savedIOURL = "http://devapi.saved.io/bookmarks"
 
 -- | Fetch a URL from saved.io.
 savedIO :: Text -> IO B.ByteString
-savedIO = rethrowHttpExceptionAsSavedIO . simpleHttp . cs . append savedIOURL
+savedIO query = let url = cs $ append savedIOURL query
+                in parseRequest url
+                >>= httpLBS
+                >>= rethrowHttpExceptionAsSavedIO . pure . getResponseBody
 
 -- | Send a POST request to saved.io.
 savedIOHTTP :: Method -> Text -> IO B.ByteString
-savedIOHTTP a b = rethrowHttpExceptionAsSavedIO $ go a (cs b)
-  where
-    go htype body = do
-      manager <- newManager defaultManagerSettings
-      initReq <- parseRequest $ cs savedIOURL
-      let req = initReq { method = htype
-                        , requestHeaders = [("Content-Type"
-                                           , "application/x-www-form-urlencoded")
-                                           ]
-                        , requestBody = RequestBodyLBS body
-                        }
-      result <- httpLbs req manager
-      pure $ responseBody result
+savedIOHTTP htype body =
+  let url = cs savedIOURL
+  in do
+    initReq <- parseRequest url
+    let req = initReq { method = htype
+                      , requestHeaders = [("Content-Type"
+                                         , "application/x-www-form-urlencoded")
+                                         ]
+                      , requestBody = RequestBodyLBS $ cs body
+                      }
+    result <- httpLBS req
+    rethrowHttpExceptionAsSavedIO (pure $ getResponseBody result)
 
 -- | Retrieve a sequence of bookmarks.
 retrieveBookmarks :: Token            -- ^ API Token.
