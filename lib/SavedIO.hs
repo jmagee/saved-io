@@ -88,11 +88,11 @@ module SavedIO (
 import Debug.Trace
 
 import           SavedIO.Display
+import           SavedIO.Exception
 import           SavedIO.Internal
 import           SavedIO.Types
 
-import           Control.Exception          (catch, evaluate, throw, throwIO,
-                                             tryJust)
+import           Control.Exception          (evaluate, throw, throwIO, tryJust)
 import           Control.Monad              (void)
 import           Data.Aeson                 (FromJSON, eitherDecode)
 import qualified Data.ByteString.Lazy       as B
@@ -102,15 +102,11 @@ import           Data.Maybe                 (isJust)
 import           Data.Optional              (Optional (..))
 import           Data.Text                  hiding (group)
 import           Network.HTTP.Client        (defaultManagerSettings)
-import           Network.HTTP.Conduit       (HttpException (..),
-                                             HttpExceptionContent (..),
-                                             RequestBody (..), httpLbs, method,
+import           Network.HTTP.Conduit       (RequestBody (..), httpLbs, method,
                                              newManager, parseRequest,
                                              requestBody, requestHeaders,
-                                             responseBody, responseStatus,
-                                             simpleHttp)
+                                             responseBody, simpleHttp)
 import           Network.HTTP.Types.Method  (Method, methodDelete, methodPost)
-import           Network.HTTP.Types.Status  (status403, status404)
 
 -- | Base URL for saved io API.
 savedIOURL :: String
@@ -162,32 +158,6 @@ getBookmark' token bid = either (const Nothing) Just
     justDecodeError x@(DecodeError _) = Just x
     justDecodeError _ = Nothing
     mark = getBookmark token bid
-
--- | Catch specific 'HttpException's and re-throw them as 'SavedIOException's.
-rethrowHttpExceptionAsSavedIO :: IO a -> IO a
-rethrowHttpExceptionAsSavedIO act = do
-  result <- tryJust justHttpException act
-  case result of
-    Left e  -> 
-      case httpExceptionToSavedIO e of
-        Just x  -> throwIO x
-        Nothing -> throwIO e
-    Right x -> pure x
-  where
-    justHttpException x@(HttpExceptionRequest _ _) = Just x
-    justHttpException _ = Nothing
-
--- | Convert specific 'HttpException's to 'SavedIOException's.
-httpExceptionToSavedIO :: HttpException -> Maybe SavedIOException
-httpExceptionToSavedIO (HttpExceptionRequest req (StatusCodeException response _)) =
-  responseTo $ responseStatus response
-  where
-    responseTo r | r == status403 = Just $ BadToken (show req)
-                 | r == status404 = Just $ BadURL (show req)
-                 | otherwise      = Nothing
-httpExceptionToSavedIO (HttpExceptionRequest req (ConnectionFailure _)) =
-  Just $ BadURL (show req)
-httpExceptionToSavedIO _ = Nothing
 
 -- | Search bookmarks.
 --
@@ -282,11 +252,3 @@ throwDecodeError = throw . DecodeError . BP.unpack
 -- | Perform a url DELETE action, and check for API failure.
 deleteAction :: String -> IO String
 deleteAction b = BP.unpack <$> savedIOHTTP methodDelete b
-
--- | Catch only 'SavedIOException's.
--- Equivelant to 'Control.Exception.Catch', except the handler can only handle
--- 'SavedIOException'.
-catchSavedIOException :: IO a                   -- ^ The computation to run
-                      -> (SavedIOException -> IO a) -- ^ The handler
-                      -> IO a
-catchSavedIOException = catch

@@ -53,7 +53,8 @@ flag documentation
 library
   exposed-modules:     SavedIO,
                        SavedIO.Internal,
-                       SavedIO.Display
+                       SavedIO.Display,
+                       SavedIO.Exception,
                        SavedIO.Types,
                        SavedIO.Util
   build-depends:       aeson >= 0.7.0.6,

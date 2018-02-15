@@ -1,6 +1,5 @@
 -- | Types for SavedIO.
 {-# LANGUAGE OverloadedStrings #-}
--- {-# LANGUAGE DeriveDataTypeable #-}
 
 module SavedIO.Types (
   -- * Exported Types
@@ -31,14 +30,8 @@ module SavedIO.Types (
   -- * Misc Utility
 , dateFromString
 
- -- * FIXME: File in proper place
-, SavedIOException (..)
-, exceptionFromString
 ) where
 
-import           SavedIO.Display
-
-import           Control.Exception   (Exception)
 import           Control.Monad       (mzero)
 import           Data.Aeson
 import qualified Data.List           as L
@@ -166,29 +159,6 @@ colorize (Just scheme) key text =
     (Just color)  -> foldl T.append (startColor color) [text, endColor]
   where startColor c = T.pack $ CS.setSGRCode [CS.SetColor CS.Foreground CS.Vivid c]
         endColor     = T.pack $ CS.setSGRCode [CS.Reset]
-
--- | A concrete type for errors returned by the saved.io API.
-data SavedIOException
-  = UnknownError String
-  | DoesNotExistError String -- ^ The bookmark does not (appear to) exist.
-  | NotDeletedError String   -- ^ The bookmark was not deleted.
-  | DecodeError String       -- ^ Could not decode the response from the server.
-  | BadToken String          -- ^ Bad token (user key and developer key)
-  | BadURL String            -- ^ The saved.io URl is down or incorrect
-  deriving (Eq, Show)
-
-instance Exception SavedIOException
-
-instance Display SavedIOException where
-  display (UnknownError s)      = "Unknown error: " ++ s
-  display (DoesNotExistError s) = "Bookmark does exist: " ++ s
-  display (NotDeletedError s)   = "Bookmark was not deleted: " ++ s
-  display (DecodeError s)       = "Could not decode remote response: " ++ s
-  display (BadToken s)          = "Bad user key or developer.  HTTP request was: \n" ++ s
-  display (BadURL s)            = "Bad or unreachable URL.  HTTP request was: \n" ++ s
-
-exceptionFromString :: String -> SavedIOException
-exceptionFromString = UnknownError
 
 type SearchString = String
 type SearchDay    = Day
