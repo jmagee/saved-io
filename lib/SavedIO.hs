@@ -98,6 +98,8 @@ import           Data.Aeson                (FromJSON, eitherDecode)
 import qualified Data.ByteString.Lazy      as B (ByteString, append)
 import           Data.Maybe                (isJust)
 import           Data.Optional             (Optional (..))
+import           Data.Sequence             (Seq)
+import qualified Data.Sequence             as S (filter)
 import           Data.String.Conversions   (cs)
 import           Data.Text                 (Text, append, isInfixOf)
 import           Network.HTTP.Client       (defaultManagerSettings)
@@ -131,11 +133,11 @@ savedIOHTTP a b = rethrowHttpExceptionAsSavedIO $ go a (cs b)
       result <- httpLbs req manager
       pure $ responseBody result
 
--- | Retrieve a list of bookmarks.
+-- | Retrieve a sequence of bookmarks.
 retrieveBookmarks :: Token            -- ^ API Token.
                   -> Optional BMGroup -- ^ Bokmark Group.
                   -> Optional Int     -- ^ Limit the number of results returned.
-                  -> IO [Bookmark]    -- ^ A list of bookmarks
+                  -> IO (Seq Bookmark)  -- ^ A sequence of bookmarks
 retrieveBookmarks token group limit =
   getAction $ retrieveBookmarksQ token group limit
 
@@ -162,12 +164,12 @@ getBookmark' token bid = either (const Nothing) Just
 --
 -- This call retrieves all bookmarks then does a search.  The saved.io
 -- API does not provide a server side search call.
-searchBookmarks :: SearchKey -> [Bookmark] -> [Bookmark]
-searchBookmarks (BID x)      = filter $ (x ==) . _id
-searchBookmarks (Url x)      = filter $ (cs x `isInfixOf`) . _url
-searchBookmarks (Title x)    = filter $ (cs x `isInfixOf`) . _title
-searchBookmarks (Note x)     = filter $ (cs x `isInfixOf`) . _note
-searchBookmarks (Creation x) = filter $ (x ==) . _creation
+searchBookmarks :: SearchKey -> Seq Bookmark -> Seq Bookmark
+searchBookmarks (BID x)      = S.filter $ (x ==) . _id
+searchBookmarks (Url x)      = S.filter $ (cs x `isInfixOf`) . _url
+searchBookmarks (Title x)    = S.filter $ (cs x `isInfixOf`) . _title
+searchBookmarks (Note x)     = S.filter $ (cs x `isInfixOf`) . _note
+searchBookmarks (Creation x) = S.filter $ (x ==) . _creation
 
 -- | Create a bookmark entry.
 -- This returns a 'BMId' instead of a full bookmark, primarily due to limitations

@@ -8,6 +8,9 @@ import           SavedIO
 import           SavedIO.Util
 import           Version
 
+import           Data.Foldable              (toList)
+import           Data.Sequence              (Seq)
+import qualified Data.Sequence              as S (sortBy, reverse)
 import           Data.Aeson                 (eitherDecode', toJSON)
 import           Data.Aeson.Encode.Pretty   (encodePretty)
 import qualified Data.ByteString.Lazy.Char8 as B (putStrLn, readFile)
@@ -60,11 +63,11 @@ run (CL.Options c@(Common dev user format color limit sort sortMethod) cmd) =
   in case cmd of
     Listing group             -> token
       >>= \t -> retrieveBookmarks t group limit
-      >>= \x -> printTextList $ ppMarkDef <$> sortIf sort sortMethod x
+      >>= \x -> printTextSeq $ ppMarkDef <$> sortIf sort sortMethod x
 
     Search query searchFormat -> token
       >>= \t -> retrieveBookmarks t Default limit
-      >>= \x -> printTextList $ ppMarkDef <$>
+      >>= \x -> printTextSeq $ ppMarkDef <$>
                 sortIf sort
                        sortMethod
                        (searchBookmarks (extractSearchKey searchFormat
@@ -97,9 +100,9 @@ run (CL.Options c@(Common dev user format color limit sort sortMethod) cmd) =
                                        " and -u|--userkey options required."
       checkToken (Specific x)    = pure x
 
--- | Print a list of Text.
-printTextList :: [Text] -> IO ()
-printTextList = T.putStrLn . T.intercalate "\n"
+-- | Print a sequence of Text.
+printTextSeq :: Seq Text -> IO ()
+printTextSeq  = T.putStrLn . T.intercalate "\n" . toList
 
 -- | Print a warning on failure.
 warn :: Either String a -> IO ()
@@ -109,9 +112,9 @@ warn _         = pure ()
 -- | Sort bookmarks.
 -- If no SortMethod is provided then default to an ascending sort by
 -- title.
-sortMarks :: Optional SortMethod -> [Bookmark] -> [Bookmark]
-sortMarks Default           = sortBy (compare `on` _title)
+sortMarks :: Optional SortMethod -> Seq Bookmark -> Seq Bookmark
+sortMarks Default           = S.sortBy (compare `on` _title)
 sortMarks (Specific method) = case method of
   SortByTitle d -> case d of
     Ascending   -> sortMarks Default
-    Descending  -> reverse . sortMarks Default
+    Descending  -> S.reverse . sortMarks Default
