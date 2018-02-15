@@ -84,8 +84,6 @@ module SavedIO (
 , catchSavedIOException
 ) where
 
-import Debug.Trace
-
 import           SavedIO.Display
 import           SavedIO.Exception
 import           SavedIO.Query
