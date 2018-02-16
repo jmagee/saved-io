@@ -23,9 +23,12 @@ module SavedIO.Types (
 , defBookKeys
 , defBookmarkConfig
 , ppBookmark
+, ColorScheme 
 
   -- * Search Utility
 , extractSearchKey
+, SearchString
+, SearchDay
 
   -- * Misc Utility
 , dateFromString
@@ -51,8 +54,8 @@ import qualified System.Console.ANSI     as CS
 type Key = Text
 
 -- | The saved.io API Token.
--- User keys can be generated here: http://saved.io/key
--- Dev keys can be generated here: http://devapi.saved.io/key
+-- User keys can be generated here: http://saved.io/key.
+-- Dev keys can be generated here: http://devapi.saved.io/key.
 data Token =
   Token { _devKey  :: Key
         , _userKey :: Key
@@ -116,6 +119,13 @@ data BookmarkConfig =
                  } deriving (Show, Eq)
 
 -- | Default color scheme for bookmark.
+-- The default color scheme is
+-- 
+-- * id = cyan
+-- * title = green
+-- * url = blue
+-- * note = yellow
+-- * creation = red
 defBookColors :: ColorScheme
 defBookColors =
   [ ("id", CS.Cyan)
@@ -125,11 +135,19 @@ defBookColors =
   , ("creation", CS.Red)
   ]
 
--- | Default bookmark key string
+-- | Default bookmark key string.
+-- The default book keys are:
+-- 
+-- * title
+-- * url
 defBookKeys :: Text
 defBookKeys = "title,url"
 
 -- | Default bookmark config
+-- The default bookmark config is
+--
+-- * keys = "title,url"
+-- * colorScheme = Nothing (no color)
 defBookmarkConfig :: BookmarkConfig
 defBookmarkConfig = BookmarkConfig defBookKeys Nothing
 
@@ -151,7 +169,7 @@ ppBookmark (BookmarkConfig k scheme)
         "creation"  -> T.append "Created: "  $ colorize' "creation" $ cshow theCreation
         e@_         -> T.append "unrecognized format " e
 
--- Colorize it!
+-- | Colorize it!
 colorize :: Maybe ColorScheme -> String -> Text -> Text
 colorize Nothing       key text = colorize (Just []) key text
 colorize (Just scheme) key text =
@@ -161,7 +179,10 @@ colorize (Just scheme) key text =
   where startColor c = T.pack $ CS.setSGRCode [CS.SetColor CS.Foreground CS.Vivid c]
         endColor     = T.pack $ CS.setSGRCode [CS.Reset]
 
+-- | A string to use in search queries represented as 'Text'.
 type SearchString = Text
+
+-- | A string to use in date-base search queries, represented as 'Day'.
 type SearchDay    = Day
 
 -- | SearchKey encodes "what to search for" and "where to search for it."

@@ -1,10 +1,5 @@
--- Display.hs
--- Typeclass that provides conversion to string (like show), but with the intention to be
+-- | Typeclass that provides conversion to string (like show), but with the intention to be
 -- read by a user (unlike show, which ought to output something that can be parsed with read.)
-
--- These are needed to define type instances on String.
---{-# LANGUAGE TypeSynonymInstances #-}
---{-# LANGUAGE FlexibleInstances #-}
 
 module SavedIO.Display
 ( Display
@@ -18,12 +13,7 @@ import           Data.Text               (Text)
 -- Like show, but intended to be user derived to have better
 -- control of the final string.
 class Show a => Display a where
+  -- | Display as Text.
+  -- The resulting text is intended to be read by a user.
   display :: a -> Text
   display = cs . show
-
--- instance Display String where
---  display x = x
-
-{-instance Display a => Display (Maybe a) where-}
-  {-display (Just x) = display x-}
-  {-display Nothing  = "Unspecified"-}

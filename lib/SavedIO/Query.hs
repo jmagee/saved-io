@@ -27,7 +27,7 @@ import           Data.Time               (Day, UTCTime (..), defaultTimeLocale,
 (>++<) :: Text -> Text -> Text
 (>++<) = append
 
--- | Prepare the query string for retrieveBookmark
+-- | Prepare the query string for retrieveBookmarks.
 retrieveBookmarksQ :: Token
                    -> Optional BMGroup
                    -> Optional Int
@@ -48,10 +48,11 @@ retrieveBookmarksQ token group limit =
       pageStr :: Optional Int -> Text
       pageStr  = formatParam "page=" . (cshow <$>)
 
+-- | Prepare the query string for getBookmark.
 getBookmarkQ :: Token -> BMId -> Text
 getBookmarkQ token bid = "/" >++< bid >++< "?" >++< tokenStr token
 
--- | Prepare the query string for createBookmark
+-- | Prepare the query string for createBookmark.
 createBookmarkQ :: Token
                 -> BMTitle
                 -> BMUrl
@@ -64,7 +65,7 @@ createBookmarkQ token title url group =
                , formatParam "list=" group
                ]
 
--- | Prepare the query string for deleteBookmark
+-- | Prepare the query string for deleteBookmark.
 deleteBookmarkQ :: Token -> BMId -> Text
 deleteBookmarkQ token bkid =
   tokenStr token >&&<

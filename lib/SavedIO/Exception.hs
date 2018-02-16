@@ -21,10 +21,10 @@ import           Network.HTTP.Types.Status (status403, status404)
 -- | A concrete type for errors returned by the saved.io API.
 data SavedIOException
   = DoesNotExistError Text   -- ^ The bookmark does not (appear to) exist.
-  | NotDeletedError Text     -- ^ The bookmark was not deleted.
+  | NotDeletedError Text     -- ^ The bookmark was not deleted..
   | DecodeError Text         -- ^ Could not decode the response from the server.
   | BadToken Text            -- ^ Bad token (user key and developer key).
-  | BadURL Text              -- ^ The saved.io URl is down or incorrect.
+  | BadURL Text              -- ^ The saved.io URL is down or incorrect.
   deriving (Eq, Show)
 
 instance Exception SavedIOException
@@ -65,7 +65,7 @@ httpExceptionToSavedIO _ = Nothing
 -- | Catch only 'SavedIOException's.
 -- Equivalent to 'Control.Exception.Catch', except the handler can only handle
 -- 'SavedIOException'.
-catchSavedIOException :: IO a                   -- ^ The computation to run
-                      -> (SavedIOException -> IO a) -- ^ The handler
+catchSavedIOException :: IO a                       -- ^ The computation to run.
+                      -> (SavedIOException -> IO a) -- ^ The handler.
                       -> IO a
 catchSavedIOException = catch
