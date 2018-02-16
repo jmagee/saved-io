@@ -115,6 +115,7 @@ test-suite hspec
                        ansi-terminal,
                        hspec >= 1.8,
                        QuickCheck,
+                       quickcheck-instances,
                        optional-args,
                        SavedIO,
                        text,

@@ -5,10 +5,10 @@ module SavedIOSpec (
   spec
 ) where
 
-import            SavedIO
-import            SavedIO.Query
-import            SavedIO.Types
-import            SavedIO.Util
+import           SavedIO
+import           SavedIO.Query
+import           SavedIO.Types
+import           SavedIO.Util
 
 import           Data.Optional             (Optional (..))
 import           Data.Text
@@ -17,20 +17,13 @@ import qualified System.Console.ANSI       as CS
 import           Test.Hspec
 import           Test.Hspec.QuickCheck
 import           Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
+import           Test.QuickCheck.Instances
 
 instance Arbitrary Token where
   arbitrary = Token <$> arbitrary <*> arbitrary
 
-instance Arbitrary Text where
-  arbitrary = pack <$> arbitrary
-
 spec :: Spec
 spec = do
-  {-describe "ppSavedIOError" $ do-}
-    {-it "prints message with prefix" $-}
-      {-ppSavedIOError (SavedIOResponse True "abc 123") `shouldBe` pack "Saved.io error: abc 123"-}
-    {-it "prints empty with prefix" $-}
-      {-ppSavedIOError (SavedIOResponse False "") `shouldBe` pack "Saved.io error: "-}
 
   describe "defBookColors" $
     it "is full of pretty colors" $
@@ -144,6 +137,23 @@ spec = do
       \a b c d -> let ab = mkToken a b
                       cd = mkToken c d
                   in (ab == cd) == (a == c && b == d)
+
+  describe "Bookmark" $ do
+    prop "_id Bookmark { id, url, title, note, creation } ==  id" $
+      \id url title note creation -> let mark = Bookmark id url title note creation
+                                     in _id mark == id
+    prop "_url Bookmark { id, url, title, note, creation } == url" $
+      \id url title note creation -> let mark = Bookmark id url title note creation
+                                     in _url mark == url
+    prop "_title Bookmark { id, url, title, note, creation } == title" $
+      \id url title note creation -> let mark = Bookmark id url title note creation
+                                     in _title mark == title
+    prop "_note Bookmark { id, url, title, note, creation } == note " $
+      \id url title note creation -> let mark = Bookmark id url title note creation
+                                     in _note mark == note
+    prop "_creation Bookmark { id, url, title, note, creation } == creation" $
+      \id url title note creation -> let mark = Bookmark id url title note creation
+                                     in _creation mark == creation
 
   describe "perhaps" $ do
     prop "perhaps x id Default == x :: Int" $
