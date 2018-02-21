@@ -30,7 +30,7 @@ data SavedIOException
 instance Exception SavedIOException
 
 instance Display SavedIOException where
-  display (DoesNotExistError s) = "Bookmark does exist: " `append` s
+  display (DoesNotExistError s) = "Bookmark does not exist: " `append` s
   display (NotDeletedError s)   = "Bookmark was not deleted: " `append` s
   display (DecodeError s)       = "Could not decode remote response: " `append` s
   display (BadToken s)          = "Bad user key or developer.  HTTP request was: \n" `append` s

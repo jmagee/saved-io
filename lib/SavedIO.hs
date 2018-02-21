@@ -126,9 +126,9 @@ import qualified Data.Sequence             as S (filter)
 import           Data.String.Conversions   (cs)
 import           Data.Text                 (Text, append, isInfixOf)
 import           Network.HTTP.Conduit      (RequestBody (..), method,
-                                            requestBody, requestHeaders)
-import           Network.HTTP.Simple       (getResponseBody, httpLBS,
-                                            parseRequest)
+                                            parseUrlThrow, requestBody,
+                                            requestHeaders)
+import           Network.HTTP.Simple       (getResponseBody, httpLBS)
 import           Network.HTTP.Types.Method (Method, methodDelete, methodPost)
 
 -- | Base URL for saved io API.
@@ -137,25 +137,25 @@ savedIOURL = "http://devapi.saved.io/bookmarks"
 
 -- | Fetch a URL from saved.io.
 savedIO :: Text -> IO B.ByteString
-savedIO query = let url = cs $ append savedIOURL query
-                in parseRequest url
-                >>= httpLBS
-                >>= rethrowHttpExceptionAsSavedIO . pure . getResponseBody
+savedIO query =
+  let url = cs $ append savedIOURL query
+  in getResponseBody <$>
+    (parseUrlThrow url >>= rethrowHttpExceptionAsSavedIO . httpLBS)
 
 -- | Send a POST request to saved.io.
 savedIOHTTP :: Method -> Text -> IO B.ByteString
 savedIOHTTP htype body =
   let url = cs savedIOURL
   in do
-    initReq <- parseRequest url
+    initReq <- parseUrlThrow url
     let req = initReq { method = htype
                       , requestHeaders = [("Content-Type"
                                          , "application/x-www-form-urlencoded")
                                          ]
                       , requestBody = RequestBodyLBS $ cs body
                       }
-    result <- httpLBS req
-    rethrowHttpExceptionAsSavedIO (pure $ getResponseBody result)
+    result <- rethrowHttpExceptionAsSavedIO $ httpLBS req
+    pure $ getResponseBody result
 
 -- | Retrieve a sequence of bookmarks.
 --
