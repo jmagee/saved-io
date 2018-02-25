@@ -156,6 +156,3 @@ Limitations
 ===========
  * The saved.io v2 API provides no way to query or show the bookmark groups.
    (v1 did provide it.)
- * The saved.io v2 API does not provide any indication of whether a bookmark is
-   deleted.  Therefore, deleting a mark always appears to succeed, regardless
-   of whether anything was deleted or not.
