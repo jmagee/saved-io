@@ -38,6 +38,7 @@ Printing Help
 ```
 Available options:
   -h,--help                Show this help text
+  -v,--version             Display version
   -d,--devkey DEVKEY       Saved.io developer key. See
                            http://devapi.saved.io/key
   -u,--userkey USERKEY     Saved.io user key. See http://saved.io/key

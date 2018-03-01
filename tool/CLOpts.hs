@@ -14,6 +14,7 @@ module CLOpts
 
 import           SavedIO
 import           SavedIO.Util
+import           Version
 
 import           Control.Monad       (mzero)
 import           Data.Aeson          (FromJSON, Object, ToJSON, Value (..),
@@ -121,8 +122,11 @@ data Options = Options Common Command deriving (Show)
 
 -- | Parse the full command line options.
 parseOptions :: Common -> Parser Options
-parseOptions common_def =
-  Options <$> parseCommon common_def <*> parseCommand
+parseOptions common_def = vers *> common
+  where
+    common = Options <$> parseCommon common_def <*> parseCommand
+    vers = infoOption version (long "version" <> short 'v'
+                                              <> help "Display version")
 
 -- | Parse the optional sort method.
 parseSortMethod :: Parser SortMethod
