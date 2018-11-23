@@ -15,6 +15,10 @@ This project provides:
 - A command line tool to interface with the saved.io server.
 - A Haskell library that wraps the saved.io API.
 
+Screenshot
+==========
+![Screenshot](.saved-io-peek.gif)
+
 Installation
 ============
  1. Install stack (https://docs.haskellstack.org/en/stable/README/)
