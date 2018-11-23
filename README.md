@@ -1,7 +1,8 @@
 Overview
 ========
 
-saved.io is a cloud-based bookmarking site.  Go to saved.io/about for more information.
+saved.io is a cloud-based bookmarking site.  Go to http://saved.io/about for
+more information.
 
 This project is not affiliated with the saved.io website or its developers.
 
@@ -43,9 +44,11 @@ Available options:
                            http://devapi.saved.io/key
   -u,--userkey USERKEY     Saved.io user key. See http://saved.io/key
   -f,--format BMFORMAT     id,title,url,note,creation
-  -c,--color               Use color
+  -c,--color               Enable color output
+  -b,--no-color            Disable color output
   --limit N                Limit to N results
   -s,--sort                Sort output
+  -n,--no-sort             Do not sort output
   --sort-method SORT-DIRECTION
                            ascending|descending
 
@@ -62,8 +65,8 @@ Creating a RC file
 ------------------
 Creating a RC file allows you to save the following settings:
 
- - dev key
- - user key
+ - Dev key
+ - User key
  - Bookmark display format
  - Sorting preference
  - Result limit (upper bound on number of results returned)
@@ -86,6 +89,7 @@ Deleting a bookmark
 -------------------
 Bookmarks are deleted by ID.  The bookmark ID can be queried via list and
 search commands, ensuring that `--format` contains the `id` field.
+
 `saved-io delmark Z6ek8`
 
 Fetching a single bookmark
@@ -97,11 +101,11 @@ Bookmarks can be fetched by id as well.
 Note that the same effect can be achieved with search as well, although it may
 slower as the search is done on the client side:
 
-`saved-io search -/id z6ek8`
+`saved-io search -/id Z6ek8`
 
 Listing bookmarks
 -----------------
-### List all bookmarks (potentially bounded by --limit
+### List all bookmarks (potentially bounded by --limit)
 `saved-io list`
 
 ### List all bookmarks within a group "development"
@@ -157,3 +161,4 @@ Limitations
 ===========
  * The saved.io v2 API provides no way to query or show the bookmark groups.
    (v1 did provide it.)
+ * It is not possible to edit existing bookmarks.

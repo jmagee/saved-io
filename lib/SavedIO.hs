@@ -272,7 +272,7 @@ deleteBookmark' token bkid =
   void $ deleteAction $ deleteBookmarkQ token bkid
 
 -- | Delete a bookmark.
--- This version will return a Left value upon error.
+-- This version will throw a SavedIOException upon error.
 --
 -- Note that this function will result in up to three remote API calls:
 --
