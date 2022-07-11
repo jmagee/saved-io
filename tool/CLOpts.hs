@@ -21,8 +21,6 @@ import           Data.Aeson          (FromJSON, Object, ToJSON, Value (..),
                                       object, (.:?), (.=))
 import qualified Data.Aeson.Types    as A
 import           Data.Char           (toLower)
-import           Data.Optional       (Optional (..))
-import           Data.Semigroup      ((<>))
 import           Data.Text           (Text)
 import           Options.Applicative hiding (optional)
 
